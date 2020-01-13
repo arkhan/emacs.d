@@ -893,7 +893,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t
   :leaf-defer nil
   :mode ("\\.[Cc][Ss][Vv]\\'" . csv-mode)
-  :config (setq csv-separators '("," ";" "|" " ")))
+  :setq (csv-separators . '("," ";" "|" " ")))
 #+END_SRC
 ** editorconfig
 #+BEGIN_SRC elisp
@@ -920,6 +920,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :leaf-defer nil
   :bind (("C-c e n" . flycheck-next-error)
          ("C-c e p" . flycheck-previous-error))
+  :setq (flycheck-indication-mode . 'right-fringe)
   :init
   (define-fringe-bitmap 'flycheck-fringe-bitmap-arrow
     (vector #b00000000
@@ -954,35 +955,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
     :overlay-category 'flycheck-info-overlay
     :fringe-bitmap 'flycheck-fringe-bitmap-arrow
     :fringe-face 'flycheck-fringe-info)
-  (setq flycheck-indication-mode 'right-fringe)
   :hook (after-init-hook . global-flycheck-mode))
-
-;; (leaf flycheck-posframe
-;;   :straight t
-;;   :after flycheck
-;;   :hook (flycheck-mode-hook . flycheck-posframe-mode))
-#+END_SRC
-** flymake
-#+BEGIN_SRC elisp :load no
-(leaf flymake
-  :require t
-  :setq (flymake-fringe-indicator-position . 'right-fringe))
-
-(leaf flymake-posframe
-  :straight (flymake-posframe
-             :type git
-             :host github
-             :repo "Ladicle/flymake-posframe")
-  :hook (flymake-mode-hook . flymake-posframe-mode))
-
-;; (leaf flymake-diagnostic-at-point
-;;   :straight (flymake-diagnostic-at-point
-;;              :type git
-;;              :host github
-;;              :repo "waymondo/flymake-diagnostic-at-point")
-;;   :after flymake
-;;   :setq (flymake-diagnostic-at-point-display-diagnostic-function . 'flymake-diagnostic-at-point-display-posframe)
-;;   :hook (flymake-mode-hook . flymake-diagnostic-at-point-mode))
 #+END_SRC
 ** format
 #+BEGIN_SRC elisp
@@ -1000,7 +973,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 (leaf highlight-indent-guides
   :straight t
   :diminish highlight-indent-guides-mode
-  :config (setq highlight-indent-guides-method 'character)
+  :setq (highlight-indent-guides-method . 'character)
   :hook (prog-mode-hook . highlight-indent-guides-mode))
 #+END_SRC
 ** jinja
@@ -1105,47 +1078,46 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+BEGIN_SRC elisp
 (leaf plantuml-mode
   :straight t
-  :config (setq plantuml-jar-path "/usr/share/java/plantuml/plantuml.jar"))
+  :setq (plantuml-jar-path . "/usr/share/java/plantuml/plantuml.jar"))
 #+END_SRC
 ** projectile
 #+BEGIN_SRC elisp
 (leaf projectile
   :straight t
   :diminish projectile-mode
-  :config
-  (setq projectile-known-projects-file (concat conf:cache-dir "projectile-bookmarks.eld")
-        projectile-cache-file (concat conf:cache-dir "projectile.cache")
-        projectile-file-exists-remote-cache-expire (* 10 60)
-        projectile-indexing-method 'alien
-        projectile-enable-caching t
-        projectile-completion-system 'ivy)
-  (projectile-global-mode))
+  :setq `((projectile-known-projects-file . ,(concat conf:cache-dir "projectile-bookmarks.eld"))
+          (projectile-cache-file . ,(concat conf:cache-dir "projectile.cache"))
+          (projectile-file-exists-remote-cache-expire . '(* 10 60))
+          (projectile-indexing-method . 'alien)
+          (projectile-enable-caching . t)
+          (projectile-completion-system . 'ivy))
+  :config (projectile-global-mode))
 
 (leaf counsel-projectile
-   :straight t
-   :bind* ("C-x b" . conf:switch-to-project-buffer-if-in-project)
-   :bind (("C-x r R" . counsel-projectile-rg)
+  :straight t
+  :bind* ("C-x b" . conf:switch-to-project-buffer-if-in-project)
+  :bind (("C-x r R" . counsel-projectile-rg)
          ("<C-tab>" . counsel-projectile-switch-project))
-   :config
-   (defun conf:switch-to-project-buffer-if-in-project (arg)
-     "Custom switch to buffer.
+  :config
+  (defun conf:switch-to-project-buffer-if-in-project (arg)
+    "Custom switch to buffer.
        With universal argument ARG or when not in project, rely on
        `ivy-switch-buffer'.
        Otherwise, use `counsel-projectile-switch-to-buffer'."
-     (interactive "P")
-     (if (or arg
-             (not (projectile-project-p)))
-         (ivy-switch-buffer)
-       (counsel-projectile-switch-to-buffer)))
-   :hook ((text-mode-hook prog-mode-hook) . counsel-projectile-mode))
+    (interactive "P")
+    (if (or arg
+            (not (projectile-project-p)))
+        (ivy-switch-buffer)
+      (counsel-projectile-switch-to-buffer)))
+  :hook ((text-mode-hook prog-mode-hook) . counsel-projectile-mode))
 #+END_SRC
 ** polymode
 #+BEGIN_SRC elisp
 (leaf polymode
   :straight t
   :diminish poly-python-sql-mode
+  :setq (polymode-prefix-key . '(kbd "C-c n"))
   :config
-  (setq polymode-prefix-key (kbd "C-c n"))
   (define-hostmode poly-python-hostmode :mode 'python-mode)
 
   (define-innermode poly-sql-expr-python-innermode
@@ -1189,17 +1161,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :hook (python-mode-hook . poly-python-sql-mode))
 #+END_SRC
 ** python
-*** python-template
-#+BEGIN_SRC elisp
-(setq ansi-color-for-comint-mode t)
-(defun python-template ()
-  (interactive)
-  (insert "#!/usr/bin/env python\n# -*- coding: utf-8 -*-\n\n"))
-
-(add-hook 'python-mode-hook
-          '(lambda ()
-             (when (empty-buffer?) (python-template))))
-#+END_SRC
 *** lsp-python
 #+BEGIN_SRC elisp
 ;; (leaf lsp-python-ms
@@ -1211,22 +1172,13 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t
   :pre-setq ((lsp-pyls-plugins-pyflakes-enabled . nil)
              (lsp-pyls-plugins-flake8-enabled . t))
-  :hook (python-mode-hook . lsp-deferred))
-#+END_SRC
-*** elpy
-#+begin_src elisp :load no
-(leaf elpy
-  :straight t
-  :diminish elpy-mode
-  :init (elpy-enable)
-  :setq ((elpy-rpc-backend . "jedi")
-         (elpy-shell-echo-input . nil))
+  :setq ((ansi-color-for-comint-mode . t)
+         (prelude-python-mode-hook . 'prelude-python-mode-defaults))
   :config
-  ;; (when (load "flycheck" t t)
-  ;;   (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
-  ;;   (add-hook 'elpy-mode-hook 'flycheck-mode))
-  (setq-default flymake-fringe-indicator-position 'right-fringe)
-  (add-to-list 'company-backends 'elpy-company-backend)
+  (defun python-template ()
+    (interactive)
+    (insert "#!/usr/bin/env python\n# -*- coding: utf-8 -*-\n\n"))
+
   (require 'smartparens-python)
   (require 'electric)
 
@@ -1268,9 +1220,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
             (when (buffer-modified-p)
               (basic-save-buffer-1)))))))
 
-  (when (fboundp 'exec-path-from-shell-copy-env)
-    (exec-path-from-shell-copy-env "PYTHONPATH"))
-
   (projectile-register-project-type 'python '("pyproject.toml")
                                     :compile ""
                                     :test "")
@@ -1291,18 +1240,11 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
               #'electric-layout-post-self-insert-function nil 'local)
     (add-hook 'after-save-hook 'prelude-python-mode-set-encoding nil 'local))
 
-  (setq prelude-python-mode-hook 'prelude-python-mode-defaults)
-
-  (add-hook 'python-mode-hook (lambda ()
-                                (run-hooks 'prelude-python-mode-hook))))
-#+end_src
-*** venv
-#+BEGIN_SRC elisp :load no
-(leaf auto-virtualenv
-  :straight t
-  :hook ((elpy-mode-hook
-          python-mode-hook
-          window-configuration-change-hook) . auto-virtualenv-set-virtualenv))
+  :hook ((python-mode-hook . lsp-deferred)
+         (python-mode-hook . '(lambda ()
+                                (when (empty-buffer?) (python-template))))
+         (python-mode-hook . '(lambda ()
+                                (run-hooks 'prelude-python-mode-hook)))))
 #+END_SRC
 *** poetry
 #+BEGIN_SRC elisp
@@ -1338,12 +1280,12 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 (leaf blacken
   :straight t
   :diminish blacken-mode
-  :config (setq blacken-fast-unsafe t)
+  :setq (blacken-fast-unsafe . t)
   :hook (python-mode-hook . blacken-mode))
 
 (leaf py-isort
   :straight t
-  :config (setq py-isort-options '("--lines=100"))
+  :setq (py-isort-options . '("--lines=100"))
   :hook (before-save-hook . py-isort-before-save))
 #+END_SRC
 *** stuff
@@ -1389,7 +1331,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :hook (sql-mode-hook . sqlind-minor-mode))
 #+END_SRC
 ** tex
-#+BEGIN_SRC elisp
+#+BEGIN_SRC elisp :load no
 (leaf tex
   :straight auctex
   :leaf-defer nil
@@ -1471,19 +1413,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+END_SRC
 ** xml
 #+BEGIN_SRC elisp
-(defun nxml-template ()
-  (interactive)
-  (insert "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n"))
-
-(add-hook 'nxml-mode-hook
-          '(lambda () (when (empty-buffer?) (nxml-template))))
-
-(reformatter-define xml-format
-  :program "xmlformat"
-  :group 'xml)
-
-  ;; (define-key nxml-mode-map (kbd "C-c C-f") 'xml-format-buffer)
-
 (leaf nxml-mode
   :mode (("\\.plist\\'" . nxml-mode)
          ("\\.rss\\'"   . nxml-mode)
@@ -1492,18 +1421,22 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
          ("\\.xsd\\'"   . nxml-mode)
          ("\\.xslt\\'"  . nxml-mode)
          ("\\.pom$"     . nxml-mode))
+  :magic ("<\\?xml" . nxml-mode)
   :bind (nxml-mode-map
          ("C-x f" . pretty-print-xml-buffer))
+  :setq ((nxml-slash-auto-complete-flag . t)
+         (nxml-auto-insert-xml-declaration-flag . t))
   :config
-  (setq nxml-slash-auto-complete-flag t
-        nxml-auto-insert-xml-declaration-flag t)
-  (add-to-list 'magic-mode-alist '("<\\?xml" . nxml-mode))
   (mapc
    (lambda (pair)
      (if (or (eq (cdr pair) 'xml-mode)
              (eq (cdr pair) 'sgml-mode))
          (setcdr pair 'nxml-mode)))
    auto-mode-alist)
+
+  (defun nxml-template ()
+    (interactive)
+    (insert "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n"))
 
   ;; https://gist.github.com/DinoChiesa/5489021
   (defun pretty-print-xml-region (begin end)
@@ -1536,7 +1469,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   (defun pretty-print-xml-buffer ()
     "pretty print the XML in a buffer."
     (interactive)
-    (pretty-print-xml-region (point-min) (point-max))))
+    (pretty-print-xml-region (point-min) (point-max)))
+  :hook (nxml-mode-hook . '(lambda () (when (empty-buffer?) (nxml-template)))))
 #+END_SRC
 ** yaml
 #+BEGIN_SRC elisp
