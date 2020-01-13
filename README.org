@@ -136,14 +136,12 @@
 #+begin_src elisp
 (leaf better-defaults
   :straight t
-  :setq ((shell-file-name . "/bin/sh")
-         (history-delete-duplicates . t)
+  :setq ((history-delete-duplicates . t)
          (savehist-save-minibuffer-history . 1)
          (savehist-additional-variables . '(kill-ring
                                             search-ring
                                             regexp-search-ring)))
   :setq-default `((custom-file . ,(concat conf:cache-dir "custom.el"))
-                  (semanticdb-default-save-directory . ,(concat conf:cache-dir "semanticdb/"))
                   (url-configuration-directory . ,(concat conf:cache-dir "url/"))
                   (eshell-directory-name . ,(concat conf:cache-dir "eshell/" ))
                   (savehist-file . ,(concat conf:cache-dir "history"))
@@ -172,6 +170,9 @@
               (default-abbrev-mode . t)
               (save-abbrevs . t))
   :config
+  (unless (file-exists-p abbrev-file-name)
+    (with-temp-buffer
+      (write-file abbrev-file-name)))
   (when (file-exists-p abbrev-file-name)
     (quietly-read-abbrev-file))
 
@@ -236,6 +237,7 @@
 #+BEGIN_SRC elisp
 (leaf semantic
   :require t
+  :setq `(semanticdb-default-save-directory . ,(concat conf:cache-dir "semanticdb/"))
   :config (semantic-mode 1))
 #+END_SRC
 ** tramp
@@ -555,7 +557,9 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :bind ("M-2" . maple-imenu)
   :require t
   :commands (maple-imenu)
-  :setq (maple-imenu-display-alist . '((side . left) (slot . -1))))
+  :setq ((maple-imenu-display-alist . '((side . left) (slot . -1)))
+         (maple-imenu-autoresize . nil)
+         (maple-imenu-width . 36)))
 
 (leaf maple-echoarea
   :straight (maple-echoarea
@@ -1085,12 +1089,12 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 (leaf projectile
   :straight t
   :diminish projectile-mode
-  :setq `((projectile-known-projects-file . ,(concat conf:cache-dir "projectile-bookmarks.eld"))
-          (projectile-cache-file . ,(concat conf:cache-dir "projectile.cache"))
-          (projectile-file-exists-remote-cache-expire . '(* 10 60))
-          (projectile-indexing-method . 'alien)
-          (projectile-enable-caching . t)
-          (projectile-completion-system . 'ivy))
+  :pre-setq `((projectile-known-projects-file . ,(concat conf:cache-dir "projectile-bookmarks.eld"))
+              (projectile-cache-file . ,(concat conf:cache-dir "projectile.cache"))
+              (projectile-file-exists-remote-cache-expire . '(* 10 60))
+              (projectile-indexing-method . 'alien)
+              (projectile-enable-caching . t)
+              (projectile-completion-system . 'ivy))
   :config (projectile-global-mode))
 
 (leaf counsel-projectile
@@ -1168,17 +1172,18 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 ;;   :require t
 ;;   :pre-setq `(lsp-python-ms-dir . ,(expand-file-name "mspyls/" conf:cache-dir)))
 
+(defun python-template ()
+  (interactive)
+  (insert "#!/usr/bin/env python\n# -*- coding: utf-8 -*-\n\n"))
+
+(add-hook 'python-mode-hook '(lambda ()
+                               (when (empty-buffer?) (python-template))))
+
 (leaf python-mode
   :straight t
   :pre-setq ((lsp-pyls-plugins-pyflakes-enabled . nil)
              (lsp-pyls-plugins-flake8-enabled . t))
-  :setq ((ansi-color-for-comint-mode . t)
-         (prelude-python-mode-hook . 'prelude-python-mode-defaults))
   :config
-  (defun python-template ()
-    (interactive)
-    (insert "#!/usr/bin/env python\n# -*- coding: utf-8 -*-\n\n"))
-
   (require 'smartparens-python)
   (require 'electric)
 
@@ -1241,10 +1246,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
     (add-hook 'after-save-hook 'prelude-python-mode-set-encoding nil 'local))
 
   :hook ((python-mode-hook . lsp-deferred)
-         (python-mode-hook . '(lambda ()
-                                (when (empty-buffer?) (python-template))))
-         (python-mode-hook . '(lambda ()
-                                (run-hooks 'prelude-python-mode-hook)))))
+         (python-mode-hook . prelude-python-mode-defaults)))
 #+END_SRC
 *** poetry
 #+BEGIN_SRC elisp
@@ -2056,7 +2058,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :if (executable-find "mu")
   :straight t
   :after mu4e
-  :setq ((mu4e-maildirs-extension-hide-empty-maildirs . t)
+  :setq ((shell-file-name . "/bin/sh")
+         (mu4e-maildirs-extension-hide-empty-maildirs . t)
          (mu4e-maildirs-extension-maildir-separator . "*")
          (mu4e-maildirs-extension-submaildir-separator . "✉")
          (mu4e-maildirs-extension-action-text . nil)
