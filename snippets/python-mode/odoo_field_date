@@ -1,0 +1,4 @@
+# name: Odoo Date Field
+# key: date odoo
+# --
+${1:name} = fields.Date(string='${2:string}', )

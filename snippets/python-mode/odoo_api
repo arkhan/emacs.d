@@ -1,0 +1,4 @@
+# name: Odoo api
+# key: @api odoo
+# --
+@api.${1:type}

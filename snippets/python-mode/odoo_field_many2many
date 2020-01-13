@@ -1,0 +1,4 @@
+# name: Odoo Many2many Field
+# key: m2m odoo
+# --
+${1:name}_ids = fields.Many2many('{2:object}', '{3:rel}', '${4:field1}', '${5:field2}', string='${6:string}',)

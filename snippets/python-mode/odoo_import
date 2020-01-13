@@ -1,0 +1,6 @@
+# name: Odoo Base import
+# key: import odoo
+# --
+from openerp import _, api, fields, models
+
+$0

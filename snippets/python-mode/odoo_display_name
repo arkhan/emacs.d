@@ -1,0 +1,13 @@
+# name: Odoo display name complete snippet
+# key: display_name odoo
+# --
+_rec_name = '${1:name}'
+
+@api.multi
+@api.depends('${2:fields}')
+def _$1(self):
+    for ${3:element} in self:
+        $3.$1 = $0
+
+
+$1 = fields.Char(compute='_$1')

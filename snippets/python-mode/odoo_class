@@ -1,0 +1,12 @@
+# name: Odoo Class
+# key: class odoo
+# --
+class ${1:ClassName}(models.${2:class_type}):
+    """
+    ${3:docstring}
+    """
+    _name = '${4:class.name}'
+    _description = __doc__
+
+
+    $0

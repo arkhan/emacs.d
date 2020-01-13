@@ -1,0 +1,4 @@
+# name: Odoo Float Field
+# key: float odoo
+# --
+${1:name} = fields.Float(string='${2:string}',)

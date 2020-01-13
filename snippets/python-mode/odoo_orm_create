@@ -1,0 +1,4 @@
+# name: Odoo ORM Create
+# key: create odoo
+# --
+${1:result} = ${2:object}.create({'${3:field}': ${4:field_value, }})

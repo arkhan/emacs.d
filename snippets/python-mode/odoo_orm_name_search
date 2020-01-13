@@ -1,0 +1,10 @@
+# name: Odoo ORM Name Search
+# key: name_search odoo
+# --
+@api.model
+def name_search(self, name='', args=None, operator='ilike', context=None, limit=100):
+    res = super(${1:ClassName}, self).name_search(name, args, operator, context=context, limit=limit)
+    if not name:
+        return res
+    ${2:body}
+    return res

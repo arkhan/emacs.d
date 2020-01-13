@@ -1,0 +1,4 @@
+# name: Odoo ORM Browse
+# key: browse odoo
+# --
+${1:result} = ${2:object}.browse([('${3:field}', '${4:operator}', ${5:value})])

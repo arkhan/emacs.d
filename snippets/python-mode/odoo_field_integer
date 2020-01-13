@@ -1,0 +1,4 @@
+# name: Odoo Integer Field
+# key: integer odoo
+# --
+${1:name} = fields.Integer(string='${2:string}',)

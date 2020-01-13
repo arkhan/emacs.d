@@ -1,0 +1,4 @@
+# name: Odooly
+# key: odooly
+# --
+from odooly import Client

@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: odoo <menu item ../>
+# key: odoo_menuitem
+# --
+
+<menuitem name="${1:name}"
+          parent="${2:parent_menu}"
+          action="${3:action_id}"
+          id="${4:mxl_id}"/>

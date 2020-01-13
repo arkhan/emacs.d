@@ -1,0 +1,4 @@
+# name: Odoo Many2one Field
+# key: m2o odoo
+# --
+${1:name}_id = fields.Many2one('${2:object}', string='${3:string}',)

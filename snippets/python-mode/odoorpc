@@ -1,0 +1,9 @@
+# name: Odoo RPC
+# key: odoorpc
+# --
+from odoorpc import ODOO
+
+odoo = ODOO(host='${1:127.0.0.1}', port=${2:8069})
+odoo.login('${4:db}', login='${5:user}', password='${6:pwd}')
+
+$0

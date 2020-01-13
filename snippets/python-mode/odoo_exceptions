@@ -1,0 +1,6 @@
+# name: Odoo Exception Import
+# key: exception import
+# --
+from openerp.exceptions import Warning as UserError
+
+$0

@@ -1,0 +1,4 @@
+# name: Odoo Raise
+# key: raise odoo
+# --
+raise UserError('${1:message}')

@@ -1,0 +1,5 @@
+# name: wdb.start_trace()
+# key: ws
+# --
+import wdb; wdb.start_trace()
+$0

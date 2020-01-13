@@ -1,0 +1,14 @@
+# -*- mode: snippet -*-
+# name: odoo_view_inherit
+# key: odoo_view_inherit
+# --
+<record id="${1:xml_id}" model="ir.ui.view">
+    <field name="name">${1:$(replace-regexp-in-string "_"  " " yas/text)}</field>
+    <field name="model">${3:model}</field>
+    <field name="inherit_id" ref="${4:parent_view}" />
+    <field name="arch" type="xml">
+        <${5:field} name="${6:name}" position="${7:position}">
+        $0
+        </$5>
+    </field>
+</record>

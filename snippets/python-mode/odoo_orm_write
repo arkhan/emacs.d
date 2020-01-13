@@ -1,0 +1,4 @@
+# name: Odoo ORM Write
+# key: write odoo
+# --
+${1:object}.write({'${2:field}': ${3:value}})

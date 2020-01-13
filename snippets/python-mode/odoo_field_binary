@@ -1,0 +1,4 @@
+# name: Odoo Binary Field
+# key: binary odoo
+# --
+${1:name} = fields.Binary(string='${2:string}', )

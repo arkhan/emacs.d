@@ -1,0 +1,25 @@
+# -*- mode: snippet -*-
+# name: odoo wizard action
+# key: odoo_wiz_action
+# --
+<!-- for button -->
+<record id="${1:xml_id}" model="ir.actions.act_window">
+  <field name="name">${2:name}</field>
+  <field name="res_model">${3:model}</field>
+  <field name="src_model">${4:src_model}</field>
+  <field name="view_type">${5:form}</field>
+  <field name="view_mode">${6:form}</field>
+  <field name="view_id" ref="${7:view_id}"/>
+  <field name="target">new</field>
+  <field name="help">${8:help}</field>
+</record>
+
+<!-- for menu -->
+<act_window name="$2"
+            res_model="$3"
+            src_model="${9:name}"
+            view_mode="form"
+            target="new"
+            key2="client_action_multi"
+            id="$1_menu_action"/>
+$0

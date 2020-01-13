@@ -1,0 +1,4 @@
+# name: Odoo env
+# key: env odoo
+# --
+self.env${1:type}

@@ -1,0 +1,4 @@
+# name: Odoo One2many Field
+# key: o2m odoo
+# --
+${1:name}_ids = fields.One2many('${2:object}', '${3:field}', string='${4:string}',)

@@ -1,0 +1,7 @@
+# name: Odoo ORM Write Definition
+# key: write definition odoo
+# --
+@api.multi
+def write(self, vals):
+    ${1:body}
+    return super(${2:ClassName}, self).write(vals)

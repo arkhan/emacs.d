@@ -1,0 +1,5 @@
+# name: pudb.start_trace()
+# key: rpdb
+# --
+from pudb.remote import set_trace; set_trace(term_size=(160, 50), host="0.0.0.0", port=6899)
+$0

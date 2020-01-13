@@ -1,0 +1,7 @@
+# name: Odoo ORM Create Definition
+# key: create definition odoo
+# --
+@api.model
+def create(self, vals):
+    ${1:body}
+    return super(${2:class}, self).create(vals)

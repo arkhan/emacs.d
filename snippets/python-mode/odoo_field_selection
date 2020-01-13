@@ -1,0 +1,5 @@
+# name: Odoo Selection Field
+# key: selection odoo
+# --
+${1:name} = fields.Selection([('var0', 'val0'),
+                              ('var1', 'val1')], string='${2:string}',)

@@ -1,0 +1,19 @@
+# -*- mode: snippet -*-
+# name: Odoo Action Menu
+# key: oam
+# --
+<record model="ir.actions.act_window" id="${1:xml_id}">
+     <field name="name">${2:name}</field>
+     <field name="type">ir.actions.act_window</field>
+     <field name="res_model">${3:model}</field>
+     <field name="domain"></field>
+     <field name="view_type">${4:form}</field>
+     <field name="view_mode">tree,form</field>
+     <field name="view_id" ref="${5:view_id}"/>
+ </record>
+
+
+<menuitem name="$2"
+          parent="${6:parent_menu}"
+          action="$1"
+          id="menu_$1"/>

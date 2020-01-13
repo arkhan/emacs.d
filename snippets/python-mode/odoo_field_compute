@@ -1,0 +1,10 @@
+# name: Odoo Compute Field
+# key: compute odoo
+# --
+${1:name} = fields.${2:type}(compute='_${3:function_name}', string='${4:string}',)
+
+@api.multi
+@api.depends('${5:depends}')
+def _$3(self):
+    for ${6:element} in self:
+        $6.$1 = True

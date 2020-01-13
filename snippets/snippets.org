@@ -1,0 +1,632 @@
+#+TITLE: Snippets Collection
+#+AUTHOR: org-sync-snippets
+
+* nxml-mode
+
+** odoo_action_menu
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/nxml-mode/odoo_action_menu
+  # -*- mode: snippet -*-
+  # name: Odoo Action Menu
+  # key: oam
+  # --
+  <record model="ir.actions.act_window" id="${1:xml_id}">
+       <field name="name">${2:name}</field>
+       <field name="type">ir.actions.act_window</field>
+       <field name="res_model">${3:model}</field>
+       <field name="domain"></field>
+       <field name="view_type">${4:form}</field>
+       <field name="view_mode">tree,form</field>
+       <field name="view_id" ref="${5:view_id}"/>
+   </record>
+
+
+  <menuitem name="$2"
+            parent="${6:parent_menu}"
+            action="$1"
+            id="menu_$1"/>
+
+#+END_SRC
+
+** odoo_empty_view
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/nxml-mode/odoo_empty_view
+  # -*- mode: snippet -*-
+  # name: odoo_view
+  # key: odoo_view
+  # --
+  <record id="${1:xml_id}" model="ir.ui.view">
+      <field name="name">${1:$(replace-regexp-in-string "_"  " " yas/text)}</field>
+      <field name="model">${3:model}</field>
+      <field name="arch" type="xml">
+          <${5:form} version="${6:version}" string="${7:Name}"> <!-- editable="bottom" -->
+          $0
+          </$5>
+      </field>
+  </record>
+
+#+END_SRC
+
+** odoo_field
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/nxml-mode/odoo_field
+  # -*- mode: snippet -*-
+  # name: odoo <field name="" ../>
+  # key: odoo_field
+  # --
+  <field name="${1:name}"
+         attrs="${2:attrs}"
+         readonly="${3:False}"
+         required="${4:False}"/>
+
+#+END_SRC
+
+** odoo_menuitem
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/nxml-mode/odoo_menuitem
+  # -*- mode: snippet -*-
+  # name: odoo <menu item ../>
+  # key: odoo_menuitem
+  # --
+
+  <menuitem name="${1:name}"
+            parent="${2:parent_menu}"
+            action="${3:action_id}"
+            id="${4:mxl_id}"/>
+
+#+END_SRC
+
+** odoo_view
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/nxml-mode/odoo_view
+  # -*- mode: snippet -*-
+  # name: odoo_view
+  # key: odoo_view
+  # --
+   <?xml version="1.0" encoding="UTF-8" ?>
+   <odoo>
+     <data>
+
+      <!-- Write your view -->
+
+     </data>
+   </odoo>
+
+#+END_SRC
+
+** odoo_view_inherit
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/nxml-mode/odoo_view_inherit
+  # -*- mode: snippet -*-
+  # name: odoo_view_inherit
+  # key: odoo_view_inherit
+  # --
+  <record id="${1:xml_id}" model="ir.ui.view">
+      <field name="name">${1:$(replace-regexp-in-string "_"  " " yas/text)}</field>
+      <field name="model">${3:model}</field>
+      <field name="inherit_id" ref="${4:parent_view}" />
+      <field name="arch" type="xml">
+          <${5:field} name="${6:name}" position="${7:position}">
+          $0
+          </$5>
+      </field>
+  </record>
+
+#+END_SRC
+
+** odoo_wizard_action
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/nxml-mode/odoo_wizard_action
+  # -*- mode: snippet -*-
+  # name: odoo wizard action
+  # key: odoo_wiz_action
+  # --
+  <!-- for button -->
+  <record id="${1:xml_id}" model="ir.actions.act_window">
+    <field name="name">${2:name}</field>
+    <field name="res_model">${3:model}</field>
+    <field name="src_model">${4:src_model}</field>
+    <field name="view_type">${5:form}</field>
+    <field name="view_mode">${6:form}</field>
+    <field name="view_id" ref="${7:view_id}"/>
+    <field name="target">new</field>
+    <field name="help">${8:help}</field>
+  </record>
+
+  <!-- for menu -->
+  <act_window name="$2"
+              res_model="$3"
+              src_model="${9:name}"
+              view_mode="form"
+              target="new"
+              key2="client_action_multi"
+              id="$1_menu_action"/>
+  $0
+
+#+END_SRC
+
+* python-mode
+
+** odoo_api
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_api
+  # name: Odoo api
+  # key: @api odoo
+  # --
+  @api.${1:type}
+
+#+END_SRC
+
+** odoo_class
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_class
+  # name: Odoo Class
+  # key: class odoo
+  # --
+  class ${1:ClassName}(models.${2:class_type}):
+      """
+      ${3:docstring}
+      """
+      _name = '${4:class.name}'
+      _description = __doc__
+
+
+      $0
+
+#+END_SRC
+
+** odoo_class_inherit
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_class_inherit
+  # name: Odoo Class Inherit
+  # key: class inherit odoo
+  # --
+  class ${1:ClassName}(models.${2:class_type}):
+      _inherit = '${3:class.name}'
+
+
+      $0
+
+#+END_SRC
+
+** odoo_def
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_def
+  # name: Odoo Function
+  # key: def odoo
+  # --
+  def ${1:function_name}(self):
+      return True
+
+#+END_SRC
+
+** odoo_default_date
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_default_date
+  # name: Odoo Date Default
+  # key: default date odoo
+  # --
+  default=fields.Date.today()
+
+#+END_SRC
+
+** odoo_default_datetime
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_default_datetime
+  # name: Odoo Date Default
+  # key: default date odoo
+  # --
+  default=fields.Datetime.now()
+
+#+END_SRC
+
+** odoo_display_name
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_display_name
+  # name: Odoo display name complete snippet
+  # key: display_name odoo
+  # --
+  _rec_name = '${1:name}'
+
+  @api.multi
+  @api.depends('${2:fields}')
+  def _$1(self):
+      for ${3:element} in self:
+          $3.$1 = $0
+
+
+  $1 = fields.Char(compute='_$1')
+
+#+END_SRC
+
+** odoo_dp
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_dp
+  # name: Odoo Decimal Precision Import
+  # key: dp odoo
+  # --
+  import openerp.addons.decimal_precision as dp
+
+  $0
+
+#+END_SRC
+
+** odoo_env
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_env
+  # name: Odoo env
+  # key: env odoo
+  # --
+  self.env${1:type}
+
+#+END_SRC
+
+** odoo_exceptions
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_exceptions
+  # name: Odoo Exception Import
+  # key: exception import
+  # --
+  from openerp.exceptions import Warning as UserError
+
+  $0
+
+#+END_SRC
+
+** odoo_field_binary
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_field_binary
+  # name: Odoo Binary Field
+  # key: binary odoo
+  # --
+  ${1:name} = fields.Binary(string='${2:string}', )
+
+#+END_SRC
+
+** odoo_field_boolean
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_field_boolean
+  # name: Odoo Boolean Field
+  # key: boolean odoo
+  # --
+  is_${1:name} = fields.Boolean(string='${2:string}', )
+
+#+END_SRC
+
+** odoo_field_char
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_field_char
+  # name: Odoo Char Field
+  # key: char odoo
+  # --
+  ${1:name} = fields.Char(string='${2:string}', )
+
+#+END_SRC
+
+** odoo_field_compute
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_field_compute
+  # name: Odoo Compute Field
+  # key: compute odoo
+  # --
+  ${1:name} = fields.${2:type}(compute='_${3:function_name}', string='${4:string}',)
+
+  @api.multi
+  @api.depends('${5:depends}')
+  def _$3(self):
+      for ${6:element} in self:
+          $6.$1 = True
+
+#+END_SRC
+
+** odoo_field_date
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_field_date
+  # name: Odoo Date Field
+  # key: date odoo
+  # --
+  ${1:name} = fields.Date(string='${2:string}', )
+
+#+END_SRC
+
+** odoo_field_datetime
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_field_datetime
+  # name: Odoo Datetime Field
+  # key: datetime odoo
+  # --
+  ${1:name} = fields.Datetime(string='${2:string}', )
+
+#+END_SRC
+
+** odoo_field_float
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_field_float
+  # name: Odoo Float Field
+  # key: float odoo
+  # --
+  ${1:name} = fields.Float(string='${2:string}',)
+
+#+END_SRC
+
+** odoo_field_html
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_field_html
+  # name: Odoo Html Field
+  # key: html odoo
+  # --
+  ${1:name} = fields.Html(string='${2:string}',)
+
+#+END_SRC
+
+** odoo_field_integer
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_field_integer
+  # name: Odoo Integer Field
+  # key: integer odoo
+  # --
+  ${1:name} = fields.Integer(string='${2:string}',)
+
+#+END_SRC
+
+** odoo_field_many2many
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_field_many2many
+  # name: Odoo Many2many Field
+  # key: m2m odoo
+  # --
+  ${1:name}_ids = fields.Many2many('{2:object}', '{3:rel}', '${4:field1}', '${5:field2}', string='${6:string}',)
+
+#+END_SRC
+
+** odoo_field_many2one
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_field_many2one
+  # name: Odoo Many2one Field
+  # key: m2o odoo
+  # --
+  ${1:name}_id = fields.Many2one('${2:object}', string='${3:string}',)
+
+#+END_SRC
+
+** odoo_field_one2many
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_field_one2many
+  # name: Odoo One2many Field
+  # key: o2m odoo
+  # --
+  ${1:name}_ids = fields.One2many('${2:object}', '${3:field}', string='${4:string}',)
+
+#+END_SRC
+
+** odoo_field_reference
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_field_reference
+  # name: Odoo Reference Field
+  # key: reference odoo
+  # --
+  ${1:name} = fields.Reference([('model_name', 'String')], string='${2:string}',)
+
+#+END_SRC
+
+** odoo_field_selection
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_field_selection
+  # name: Odoo Selection Field
+  # key: selection odoo
+  # --
+  ${1:name} = fields.Selection([('var0', 'val0'),
+                                ('var1', 'val1')], string='${2:string}',)
+
+#+END_SRC
+
+** odoo_field_text
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_field_text
+  # name: Odoo Text Field
+  # key: text odoo
+  # --
+  ${1:name} = fields.Text(string='${2:string}',)
+
+#+END_SRC
+
+** odoo_import
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_import
+  # name: Odoo Base import
+  # key: import odoo
+  # --
+  from openerp import _, api, fields, models
+
+  $0
+
+#+END_SRC
+
+** odoo_onchange
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_onchange
+  # name: Odoo OnChange
+  # key: on_change odoo
+  # --
+  @api.onchange('${1:field}')
+  def onchnage_${2:name}(self):
+      ${3:body}
+
+#+END_SRC
+
+** odoo_orm_browse
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_orm_browse
+  # name: Odoo ORM Browse
+  # key: browse odoo
+  # --
+  ${1:result} = ${2:object}.browse([('${3:field}', '${4:operator}', ${5:value})])
+
+#+END_SRC
+
+** odoo_orm_create
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_orm_create
+  # name: Odoo ORM Create
+  # key: create odoo
+  # --
+  ${1:result} = ${2:object}.create({'${3:field}': ${4:field_value, }})
+
+#+END_SRC
+
+** odoo_orm_create_definition
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_orm_create_definition
+  # name: Odoo ORM Create Definition
+  # key: create definition odoo
+  # --
+  @api.model
+  def create(self, vals):
+      ${1:body}
+      return super(${2:class}, self).create(vals)
+
+#+END_SRC
+
+** odoo_orm_name_get
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_orm_name_get
+  # name: Odoo ORM name_get
+  # key: name_get odoo
+  # --
+  @api.multi
+  def name_get(self):
+      res = []
+      for ${1:element} in self:
+          res.append(($1.id, '${2:value}')))
+      return res
+
+#+END_SRC
+
+** odoo_orm_name_search
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_orm_name_search
+  # name: Odoo ORM Name Search
+  # key: name_search odoo
+  # --
+  @api.model
+  def name_search(self, name='', args=None, operator='ilike', context=None, limit=100):
+      res = super(${1:ClassName}, self).name_search(name, args, operator, context=context, limit=limit)
+      if not name:
+          return res
+      ${2:body}
+      return res
+
+#+END_SRC
+
+** odoo_orm_search
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_orm_search
+  # name: Odoo ORM Search
+  # key: search odoo
+  # --
+  ${1:result} = ${2:object}.search([('${3:field}', '${4:operator}', ${5:value})])
+
+#+END_SRC
+
+** odoo_orm_unlink
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_orm_unlink
+  # name: Odoo ORM Unlink
+  # key: unlink odoo
+  # --
+  ${1:object}.unlink()
+
+#+END_SRC
+
+** odoo_orm_unlink_definition
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_orm_unlink_definition
+  # name: Odoo ORM Unlink Definition
+  # key: unlink definition odoo
+  # --
+  @api.multi
+  def unlink(self):
+      ${1:body}
+      return super(${2:ClassName}, self).unlink()
+
+#+END_SRC
+
+** odoo_orm_write
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_orm_write
+  # name: Odoo ORM Write
+  # key: write odoo
+  # --
+  ${1:object}.write({'${2:field}': ${3:value}})
+
+#+END_SRC
+
+** odoo_orm_write_definition
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_orm_write_definition
+  # name: Odoo ORM Write Definition
+  # key: write definition odoo
+  # --
+  @api.multi
+  def write(self, vals):
+      ${1:body}
+      return super(${2:ClassName}, self).write(vals)
+
+#+END_SRC
+
+** odoo_raise
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoo_raise
+  # name: Odoo Raise
+  # key: raise odoo
+  # --
+  raise UserError('${1:message}')
+
+#+END_SRC
+
+** odoorpc
+
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odoorpc
+  # name: Odoo RPC
+  # key: odoorpc
+  # --
+  from odoorpc import ODOO
+
+  odoo = ODOO(host='${1:127.0.0.1}', port=${2:8069})
+  odoo.login('${4:db}', login='${5:user}', password='${6:pwd}')
+
+  $0
+
+#+END_SRC
+** odooly
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/odooly
+  # name: Odooly
+  # key: odooly
+  # --
+  from odooly import Client
+
+#+END_SRC
+** wdb.set_trace()
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/w
+  # name: wdb.set_trace()
+  # key: w
+  # --
+  import wdb; wdb.set_trace()
+  $0
+#+END_SRC
+** wdb.start_trace()
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/ws
+  # name: wdb.start_trace()
+  # key: ws
+  # --
+  import wdb; wdb.start_trace()
+  $0
+#+END_SRC
+** pudb.remote.set_trace()
+#+BEGIN_SRC snippet :tangle {SNIPPETS-DIR}/python-mode/rpudb
+  # name: pudb.start_trace()
+  # key: rpdb
+  # --
+  from pudb.remote import set_trace; set_trace(term_size=(160, 50), host="0.0.0.0", port=6899)
+  $0
+#+END_SRC

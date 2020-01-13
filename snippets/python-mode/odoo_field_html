@@ -1,0 +1,4 @@
+# name: Odoo Html Field
+# key: html odoo
+# --
+${1:name} = fields.Html(string='${2:string}',)

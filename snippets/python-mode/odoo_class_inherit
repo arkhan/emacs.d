@@ -1,0 +1,8 @@
+# name: Odoo Class Inherit
+# key: class inherit odoo
+# --
+class ${1:ClassName}(models.${2:class_type}):
+    _inherit = '${3:class.name}'
+
+
+    $0

@@ -1,0 +1,4 @@
+# name: Odoo ORM Search
+# key: search odoo
+# --
+${1:result} = ${2:object}.search([('${3:field}', '${4:operator}', ${5:value})])

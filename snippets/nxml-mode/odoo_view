@@ -1,0 +1,12 @@
+# -*- mode: snippet -*-
+# name: odoo_view
+# key: odoo_view
+# --
+ <?xml version="1.0" encoding="UTF-8" ?>
+ <odoo>
+   <data>
+
+    <!-- Write your view -->
+
+   </data>
+ </odoo>

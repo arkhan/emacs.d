@@ -1,0 +1,4 @@
+# name: Odoo Date Default
+# key: default date odoo
+# --
+default=fields.Date.today()

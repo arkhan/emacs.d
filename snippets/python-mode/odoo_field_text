@@ -1,0 +1,4 @@
+# name: Odoo Text Field
+# key: text odoo
+# --
+${1:name} = fields.Text(string='${2:string}',)

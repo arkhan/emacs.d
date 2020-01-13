@@ -1,0 +1,9 @@
+# name: Odoo ORM name_get
+# key: name_get odoo
+# --
+@api.multi
+def name_get(self):
+    res = []
+    for ${1:element} in self:
+        res.append(($1.id, '${2:value}')))
+    return res
