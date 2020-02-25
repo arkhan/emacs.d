@@ -71,6 +71,7 @@
 (straight-use-package 'leaf)
 (straight-use-package 'leaf-keywords)
 (straight-use-package 'diminish)
+(require 'diminish)
 
 (leaf leaf
   :require t
@@ -78,7 +79,6 @@
   (leaf leaf-keywords
     :require t
     :init
-    (require 'diminish)
     (leaf-keywords-init)))
 
 (leaf async
@@ -136,30 +136,23 @@
 #+begin_src elisp
 (leaf better-defaults
   :straight t
-  :setq ((history-delete-duplicates . t)
-         (savehist-save-minibuffer-history . 1)
-         (savehist-additional-variables . '(kill-ring
-                                            search-ring
-                                            regexp-search-ring)))
-  :setq-default `((custom-file . ,(concat conf:cache-dir "custom.el"))
-                  (url-configuration-directory . ,(concat conf:cache-dir "url/"))
-                  (eshell-directory-name . ,(concat conf:cache-dir "eshell/" ))
-                  (savehist-file . ,(concat conf:cache-dir "history"))
-                  (history-length . 1000))
-  :init
-  (defun conf:minibuffer-setup-hook ()
-    (setq gc-cons-threshold most-positive-fixnum))
-  (defun conf:minibuffer-exit-hook ()
-    (setq gc-cons-threshold 800000))
+  :pre-setq `((custom-file . ,(concat conf:cache-dir "custom.el"))
+              (url-configuration-directory . ,(concat conf:cache-dir "url/"))
+              (eshell-directory-name . ,(concat conf:cache-dir "eshell/" ))
+              (savehist-file . ,(concat conf:cache-dir "history"))
+              (history-length . 1000)
+              (history-delete-duplicates . t)
+              (savehist-save-minibuffer-history . 1)
+              (savehist-additional-variables . '(kill-ring
+                                                 search-ring
+                                                 regexp-search-ring)))
   :config
   (unless (file-exists-p custom-file)
     (with-temp-buffer
       (write-file custom-file)))
   (load custom-file)
   (savehist-mode t)
-  (ido-mode nil)
-  :hook ((minibuffer-setup-hook . conf:minibuffer-setup-hook)
-         (minibuffer-exit-hook . conf:minibuffer-exit-hook)))
+  (ido-mode nil))
 #+end_src
 ** abbrev
 #+BEGIN_SRC elisp
@@ -218,7 +211,7 @@
   :pre-setq `((recentf-save-file . ,(concat conf:cache-dir "recentf"))
               (recentf-exclude . '("/tmp/" "/ssh:" "/sudo:" "/scp:"
                                    "/scpx:" "/ssh:" "/media/data/org/"
-                                   "conf:cache-dir" "/media/data/Mail/Maildir/"
+                                   "/home/arkhan/.emacs.d/cache/" "/media/data/Mail/Maildir/"
                                    "/home/arkhan/mail/"))
               (recentf-max-saved-items . 10)
               (recentf-max-menu-items . 10)
@@ -236,33 +229,43 @@
 ** semantic
 #+BEGIN_SRC elisp
 (leaf semantic
+  :leaf-defer nil
   :require t
   :setq `(semanticdb-default-save-directory . ,(concat conf:cache-dir "semanticdb/"))
-  :config (semantic-mode 1))
+  :init
+  (add-to-list 'semantic-default-submodes
+               'global-semantic-idle-summary-mode)
+  (semantic-mode 1))
 #+END_SRC
 ** tramp
 #+BEGIN_SRC elisp
 (leaf tramp
-  :straight t
-  :require t
+  ;;:straight t
+  ;;:require t
   :pre-setq `((tramp-persistency-file-name . ,(concat conf:cache-dir "tramp"))
               (tramp-auto-save-directory . ,(concat conf:cache-dir "tramp-autosave")))
   :setq ((tramp-default-method . "scp")
-         (tramp-encoding-shell . "/usr/bin/bash")
-         (tramp-debug-buffer . nil)
+         (tramp-encoding-shell . "/bin/bash")
+         (tramp-debug-buffer . t)
          (tramp-verbose . 10)
-         (tramp-shell-prompt-pattern . "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>] *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*"))
-  :config
-  (tramp-set-completion-function "ssh" '((tramp-parse-sconfig "/etc/ssh_config")
-                                         (tramp-parse-sconfig "~/.ssh/config"))))
-
-(leaf tramp-sh
-  :require t
-  :setq (tramp-ssh-controlmaster-options . '(concat "-o SendEnv TRAMP=yes " tramp-ssh-controlmaster-options)))
+         (tramp-shell-prompt-pattern . "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>] *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
+         (tramp-use-ssh-controlmaster-options . nil)
+         (tramp-password-prompt-regexp . '(concat
+                                           "^.*"
+                                           (regexp-opt
+                                            '("passphrase" "Passphrase"
+                                              "password" "Password"
+                                              "Verification code")
+                                            t)
+                                           ".*:\0? *"))))
+  ;;:config
+  ;;(tramp-set-completion-function "ssh" '((tramp-parse-sconfig "/etc/ssh_config")
+  ;;                                       (tramp-parse-sconfig "~/.ssh/config"))))
 
 (leaf counsel-tramp
   :straight t
   :bind ("C-c s" . counsel-tramp)
+  :after (tramp)
   :hook ((counsel-tramp-pre-command-hook . (lambda ()
                                              (projectile-mode 0)
                                              (editorconfig-mode 0)))
@@ -325,19 +328,26 @@
   :config (dashboard-setup-startup-hook))
 #+END_SRC
 ** font
-#+BEGIN_SRC elisp
-;; (leaf pcache
-;;   :straight t
-;;   :setq `(pcache-directory . ,(let ((dir (concat conf:cache-dir "pcache/")))
-;;                               (make-directory dir t)
-;;                               dir)))
+*** unicode-fonts
+#+begin_src elisp :load no
+(leaf pcache
+  :straight t
+  :setq `(pcache-directory . ,(let ((dir (concat conf:cache-dir "pcache/")))
+                              (make-directory dir t)
+                              dir)))
 
-;; (leaf unicode-fonts
-;;   :straight t
-;;   :init
-;;   (leaf persistent-soft
-;;     :straight t
-;;     :config (unicode-fonts-setup)))
+(leaf unicode-fonts
+  :straight t
+  :init
+  (leaf persistent-soft
+    :straight t
+    :config (unicode-fonts-setup)))
+#+end_src
+*** config
+#+BEGIN_SRC elisp
+(setq conf:font-name "PragmataPro Mono Liga"
+      conf:font-size 13.5
+      inhibit-compacting-font-caches t)
 
 (defun fc-list ()
   "Genera una lista de tipografías disponibles usando fc-list"
@@ -362,8 +372,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   (truncate (* pt 10)))
 
 (defun font-setup (&optional frame)
-  (cond ((font-exists-p "PragmataPro Mono Liga")
-         (set-face-attribute 'default frame :height (font-pt-to-height 13.5) :font "PragmataPro Mono Liga"))))
+  (cond ((font-exists-p conf:font-name)
+         (set-face-attribute 'default frame :height (font-pt-to-height conf:font-size) :font conf:font-name))))
 
 (defun font-setup-frame (frame)
   "configura la tipografía por cada nuevo marco FRAME creado."
@@ -380,6 +390,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :config
   (dolist (hook `(ediff-mode-hook
                   mu4e-headers-mode-hook
+                  notmuch-show-mode-hook
                   org-mode-hook
                   package-menu-mode-hook))
     (add-hook hook (lambda () (setq-local auto-composition-mode nil))))
@@ -448,6 +459,16 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
                                 '(("\\<\\(FIX\\|FIXME\\|TODO\\|BUG\\|HACK\\):" 1 font-lock-warning-face t)))))
 (global-prettify-symbols-mode)
 #+END_SRC
+** imenu
+#+begin_src elisp :load no
+  (leaf imenu-list
+    :straight t
+    :bind ("M-2" . imenu-list-smart-toggle)
+    :setq-default (imenu-create-index-function . 'semantic-create-imenu-index)
+    :setq ((imenu-list-size . 36)
+           (imenu-list-position . 'left)
+           (imenu-list-focus-after-activation . t)))
+#+end_src
 ** ivy
 #+BEGIN_SRC elisp
 (leaf ivy
@@ -480,7 +501,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   (add-to-list 'ivy-ignore-buffers "\\*git-gutter:.*")
   (with-eval-after-load "projectile"
     (setf projectile-globally-ignored-buffers ivy-ignore-buffers))
-  (ivy-mode 1))
+  (ivy-mode))
 
 (leaf prescient
   :straight t
@@ -494,21 +515,24 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :after ivy
   :init (ivy-prescient-mode))
 
-;; (leaf ivy-posframe
-;;   :straight t
-;;   :after ivy
-;;   :diminish ivy-posframe-mode
-;;   :setq ((ivy-posframe-hide-minibuffer . t)
-;;          (ivy-fixed-height-minibuffer . nil)
-;;          (ivy-posframe-parameters . `((min-width . ,(frame-width))
-;;                                       (min-height . ,ivy-height)))
-;;          (ivy-posframe-display-functions-alist . '((t . ivy-posframe-display-at-frame-bottom-left))))
-;;   :config (ivy-posframe-mode))
+(leaf ivy-posframe
+  :straight t
+  :after ivy
+  :diminish ivy-posframe-mode
+  :setq ((ivy-posframe-hide-minibuffer . t)
+         (ivy-fixed-height-minibuffer . nil)
+         (ivy-posframe-parameters . `((min-width . ,(frame-width))
+                                      (internal-border-width . 1)))
+         (ivy-display-function . #'ivy-posframe-display-at-frame-bottom-left))
+  :config (ivy-posframe-mode))
 
 ;; (leaf ivy-explorer
 ;;   :straight t
 ;;   :after (ivy)
-;;   :config (ivy-explorer-mode 1))
+;;   :init
+;;   (if (display-graphic-p)
+;;        (setq ivy-explorer-message-function #'ivy-explorer--posframe))
+;;   (ivy-explorer-mode))
 
 (leaf ivy-xref
   :straight t
@@ -538,8 +562,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
          ("C-h b" . counsel-descbinds)
          ("M-y" . counsel-yank-pop)
          ("M-SPC" . counsel-shell-history))
-  :setq ((counsel-find-file-at-point . t)
-         (counsel-rg-base-command . "sh -c \"rg -uuu -S --ignore-file-case-insensitive -g '!/volumes' -g '!/backups' -g '!/.git' --no-heading --line-number --color never %s\"")))
+  :setq (counsel-rg-base-command . "sh -c \"rg -uuu -S --ignore-file-case-insensitive -g '!/volumes' -g '!/backups' -g '!/.git' --no-heading --line-number --color never %s\""))
 
 (leaf ivy-rich
   :straight t
@@ -559,14 +582,9 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :commands (maple-imenu)
   :setq ((maple-imenu-display-alist . '((side . left) (slot . -1)))
          (maple-imenu-autoresize . nil)
-         (maple-imenu-width . 36)))
-
-(leaf maple-echoarea
-  :straight (maple-echoarea
-             :type git
-             :host github
-             :repo "honmaple/emacs-maple-echoarea")
-  :commands (maple-echoarea-mode))
+         (maple-imenu-width . 36))
+  :hook (mode-hook . (lambda ()
+                       (setq imenu-create-index-function 'semantic-create-imenu-index))))
 
 (leaf maple-preview
   :straight (maple-preview
@@ -576,73 +594,105 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
              :files ("*.el" "index.html" "static"))
   :commands (maple-preview-mode))
 
-(leaf maple-minibuffer
-  :straight (maple-minibuffer
+;; (leaf maple-minibuffer
+;;   :straight (maple-minibuffer
+;;              :type git
+;;              :host github
+;;              :repo "honmaple/emacs-maple-minibuffer")
+;;   :require t
+;;   :setq ((maple-minibuffer:height . nil)
+;;          (maple-minibuffer:position-type . 'frame-bottom-left)
+;;          (maple-minibuffer:border-color . "gray50"))
+;;   :config
+;;   ;; more custom parameters for frame
+;;   (defun maple-minibuffer:parameters ()
+;;     "Maple minibuffer parameters."
+;;     `((height . ,(or maple-minibuffer:height 10))
+;;       (width . ,(or (round (* (frame-width) 0.62)) maple-minibuffer:width))
+;;       (left-fringe . 5)
+;;       (right-fringe . 5)))
+
+;;   :hook (after-init-hook . maple-minibuffer-mode))
+#+end_src
+** minibuffer
+#+begin_src elisp :load no
+(leaf mini-frame
+  :straight (mini-frame
              :type git
              :host github
-             :repo "honmaple/emacs-maple-minibuffer")
+             :repo "muffinmad/emacs-mini-frame")
   :require t
-  :setq ((maple-minibuffer:height . nil)
-         (maple-minibuffer:position-type . 'frame-bottom-left)
-         (maple-minibuffer:border-color . "gray50"))
-  :config
-  ;; more custom parameters for frame
-  (defun maple-minibuffer:parameters ()
-    "Maple minibuffer parameters."
-    `((height . ,(or maple-minibuffer:height 10))
-      (width . ,(or (round (* (frame-width) 0.62)) maple-minibuffer:width))
-      (left-fringe . 5)
-      (right-fringe . 5)))
-
-  :hook (after-init-hook . maple-minibuffer-mode))
+  :hook (after-init-hook . mini-frame-mode))
 #+end_src
 ** modeline
 #+BEGIN_SRC elisp
-(leaf smart-mode-line
+(leaf doom-modeline
   :straight t
-  :setq ((line-number-mode . t)
-         (column-number-mode . t)
-         (sml/no-confirm-load-theme . t)
-         (sml/theme . 'dark))
-  :hook (emacs-startup-hook . sml/setup))
+  :setq ((doom-modeline-icon . nil)
+         (doom-modeline-height . 12)
+         (doom-modeline-env-enable-python . nil)
+         (doom-modeline-checker-simple-format . nil)
+         (doom-modeline-mu4e  . '(fboundp 'mu4e))
+         (mode-line-percent-position . nil)
+         (line-number-mode . t)
+         (column-number-mode . t))
+  :config
+  (defun conf:doom-modeline--make-xpm-filter-args (args)
+    "Force function to use `doom-modeline-height'.
+     Instead of the calculation done in `doom-modeline-refresh-bars'.
+     The minimum height is set to `frame-char-height' + 2."
+    (list (car args) (cadr args) (max (+ (frame-char-height) 2) doom-modeline-height)))
 
-(leaf mini-modeline
-  :straight t
-  :setq ((mini-modeline-truncate-p . t)
-         (mini-modeline-r-format . '("%e"
-                                     mode-line-front-space
-                                     mode-line-mule-info
-                                     mode-line-client
-                                     mode-line-modified
-                                     mode-line-remote
-                                     mode-line-frame-identification
-                                     mode-line-buffer-identification
-                                     (vc-mode vc-mode)
-                                     " "
-                                     mode-line-position
-                                     " "
-                                     mode-line-modes
-                                     mode-line-misc-info
-                                     mode-line-end-spaces)))
-  :hook (emacs-startup-hook . mini-modeline-mode))
+  (advice-add 'doom-modeline--make-xpm :filter-args #'conf:doom-modeline--make-xpm-filter-args)
 
-(leaf rich-minority
-  :straight t
-  :setq ((rm-blacklist . nil)
-         (rm-whitelist . "FlyC\\|Flymake\\|lsp"))
-  :hook (emacs-startup-hook . rich-minority-mode))
+  :hook (emacs-startup-hook . doom-modeline-mode))
+
+;; (leaf smart-mode-line
+;;   :straight t
+;;   :setq ((line-number-mode . t)
+;;          (column-number-mode . t)
+;;          (sml/mode-width . 10)
+;;          (sml/no-confirm-load-theme . t)
+;;          (sml/theme . 'dark))
+;;   :hook (emacs-startup-hook . sml/setup))
+
+;; (leaf mini-modeline
+;;   :straight t
+;;   :setq ((mini-modeline-truncate-p . t)
+;;          (mini-modeline-r-format . '("%e"
+;;                                      mode-line-front-space
+;;                                      mode-line-mule-info
+;;                                      mode-line-client
+;;                                      mode-line-modified
+;;                                      mode-line-remote
+;;                                      mode-line-frame-identification
+;;                                      mode-line-buffer-identification
+;;                                      (vc-mode vc-mode)
+;;                                      " "
+;;                                      mode-line-position
+;;                                      " "
+;;                                      mode-line-modes
+;;                                      mode-line-misc-info
+;;                                      mode-line-end-spaces)))
+;;   :hook (emacs-startup-hook . mini-modeline-mode))
+
+;; (leaf rich-minority
+;;   :straight t
+;;   :setq ((rm-blacklist . nil)
+;;          (rm-whitelist . "FlyC\\|Flymake\\|lsp"))
+;;   :hook (emacs-startup-hook . rich-minority-mode))
 #+END_SRC
 ** move-dup
 #+BEGIN_SRC elisp
 (leaf move-dup
   :straight t
   :leaf-defer nil
-  :diminish move-dup-mode
+  :diminish t
   :bind (("M-<up>" . md-move-lines-up)
          ("M-<down>" . md-move-lines-down)
          ("C-M-<up>" . md-duplicate-up)
          ("C-M-<down>" . md-duplicate-down))
-  :hook (emacs-startup-hook . global-move-dup-mode))
+  :config (global-move-dup-mode))
 #+END_SRC
 ** neotree
 #+BEGIN_SRC elisp
@@ -710,7 +760,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
              :type git
              :host github
              :repo "arkhan/vibrant-ink-theme")
-  :config (load-theme 'vibrant-ink t))
+  :init (load-theme 'vibrant-ink t))
 #+END_SRC
 ** sublimity
 #+BEGIN_SRC elisp
@@ -765,6 +815,19 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
            ("C-x 3" . switch-window-then-split-right)
            ("C-x 0" . switch-window-then-delete)))
 #+END_SRC
+** zoom
+#+begin_src elisp
+(leaf zoom-frm
+  :straight t
+  :bind (("C-+" . zoom-in/out)
+         ("C--" . zoom-in/out)
+         ("C-=" . zoom-in/out)
+         ("C-0" . zoom-in/out)
+         ("<C-mouse-4>" . zoom-in)
+         ("<C-mouse-5>" . zoom-out))
+  :setq (zoom-frame/buffer . 'frame))
+#+end_src
+
 * Prog
 ** company
 #+BEGIN_SRC elisp
@@ -1020,13 +1083,13 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t
   :after lsp
   :commands lsp-ui-mode
-  :setq  ((lsp-ui-sideline-enable . t)
-          (lsp-ui-sideline-ignore-duplicate . t)
-          (lsp-ui-sideline-show-hover . nil)
-          (lsp-ui-doc-enable . nil))
-  :config
-  (define-key lsp-ui-mode-map [remap xref-find-definitions] #'lsp-ui-peek-find-definitions)
-  (define-key lsp-ui-mode-map [remap xref-find-references] #'lsp-ui-peek-find-references)
+  :bind (lsp-ui-mode-map
+         ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
+         ([remap xref-find-references] . lsp-ui-peek-find-references))
+  :pre-setq  ((lsp-ui-sideline-enable . t)
+              (lsp-ui-sideline-ignore-duplicate . t)
+              (lsp-ui-sideline-show-hover . nil)
+              (lsp-ui-doc-enable . nil))
   :hook (lsp-mode-hook . lsp-ui-mode))
 
 (leaf company-lsp
@@ -1165,13 +1228,23 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :hook (python-mode-hook . poly-python-sql-mode))
 #+END_SRC
 ** python
+*** lsp-python-ms
+#+begin_src elisp :load no
+(leaf lsp-python-ms
+  :straight t
+  :require t
+  :pre-setq `((lsp-python-ms-dir . ,(expand-file-name "mspyls/" conf:cache-dir))
+              (lsp-python-ms-python-executable-cmd . "python"))
+  :config
+  (require 'smartparens-python)
+  (require 'electric)
+  (projectile-register-project-type 'python '("pyproject.toml")
+                                    :compile ""
+                                    :test "")
+  :hook (python-mode-hook . lsp-deferred))
+#+end_src
 *** lsp-python
 #+BEGIN_SRC elisp
-;; (leaf lsp-python-ms
-;;   :straight t
-;;   :require t
-;;   :pre-setq `(lsp-python-ms-dir . ,(expand-file-name "mspyls/" conf:cache-dir)))
-
 (defun python-template ()
   (interactive)
   (insert "#!/usr/bin/env python\n# -*- coding: utf-8 -*-\n\n"))
@@ -1181,72 +1254,16 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 
 (leaf python-mode
   :straight t
-  :pre-setq ((lsp-pyls-plugins-pyflakes-enabled . nil)
+  :pre-setq ((lsp-pyls-plugins-pycodestyle-enabled . nil)
+             (lsp-pyls-plugins-pyflakes-enabled . nil)
              (lsp-pyls-plugins-flake8-enabled . t))
   :config
   (require 'smartparens-python)
   (require 'electric)
-
-  (defun prelude-python--encoding-comment-required-p ()
-    (re-search-forward "[^\0-\177]" nil t))
-
-  (defun prelude-python--detect-encoding ()
-    (let ((coding-system
-           (or save-buffer-coding-system
-               buffer-file-coding-system)))
-      (if coding-system
-          (symbol-name
-           (or (coding-system-get coding-system 'mime-charset)
-               (coding-system-change-eol-conversion coding-system nil)))
-        "ascii-8bit")))
-
-  (defun prelude-python--insert-coding-comment (encoding)
-    (let ((newlines (if (looking-at "^\\s *$") "\n" "\n\n")))
-      (insert (format "# coding: %s" encoding) newlines)))
-
-  (defun prelude-python-mode-set-encoding ()
-    "Insert a magic comment header with the proper encoding if necessary."
-    (save-excursion
-      (widen)
-      (goto-char (point-min))
-      (when (prelude-python--encoding-comment-required-p)
-        (goto-char (point-min))
-        (let ((coding-system (prelude-python--detect-encoding)))
-          (when coding-system
-            (if (looking-at "^#!") (beginning-of-line 2))
-            (cond ((looking-at "\\s *#\\s *.*\\(en\\)?coding\\s *:\\s *\\([-a-z0-9_]*\\)")
-                   ;; update existing encoding comment if necessary
-                   (unless (string= (match-string 2) coding-system)
-                     (goto-char (match-beginning 2))
-                     (delete-region (point) (match-end 2))
-                     (insert coding-system)))
-                  ((looking-at "\\s *#.*coding\\s *[:=]"))
-                  (t (prelude-python--insert-coding-comment coding-system)))
-            (when (buffer-modified-p)
-              (basic-save-buffer-1)))))))
-
   (projectile-register-project-type 'python '("pyproject.toml")
                                     :compile ""
                                     :test "")
-
-  (defun prelude-python-mode-defaults ()
-    "Defaults for Python programming."
-    (subword-mode +1)
-    (eldoc-mode 1)
-    (setq-local electric-layout-rules
-                '((?: . (lambda ()
-                          (and (zerop (first (syntax-ppss)))
-                               (python-info-statement-starts-block-p)
-                               'after)))))
-    (when (fboundp #'python-imenu-create-flat-index)
-      (setq-local imenu-create-index-function
-                  #'python-imenu-create-flat-index))
-    (add-hook 'post-self-insert-hook
-              #'electric-layout-post-self-insert-function nil 'local)
-    (add-hook 'after-save-hook 'prelude-python-mode-set-encoding nil 'local))
-
-  :hook ((python-mode-hook . lsp-deferred)
-         (python-mode-hook . prelude-python-mode-defaults)))
+  :hook (python-mode-hook . lsp-deferred))
 #+END_SRC
 *** poetry
 #+BEGIN_SRC elisp
@@ -1254,28 +1271,11 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t
   :require t)
 #+END_SRC
-*** pyenv
+*** pyenv + virtualenv
 #+BEGIN_SRC elisp
-(leaf switch-buffer-functions
+(leaf auto-virtualenv
   :straight t
-  :require t)
-
-(leaf pyenv
-  :straight (pyenv
-             :type git
-             :host github
-             :repo "aiguofer/pyenv.el")
-  :require t
-  :setq ((pyenv-use-alias . nil)
-         (pyenv-set-path . nil))
-  :config
-  (global-pyenv-mode)
-
-  (defun pyenv-update-on-buffer-switch (prev curr)
-    (if (string-equal "Python" (format-mode-line mode-name nil nil curr))
-        (pyenv-use-global)))
-
-  :hook (switch-buffer-functions . pyenv-update-on-buffer-switch))
+  :hook ((python-mode-hook projectile-after-switch-project-hook) . auto-virtualenv-set-virtualenv))
 #+END_SRC
 *** pep8
 #+BEGIN_SRC elisp
@@ -1305,7 +1305,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
           xrdb-mode-hook) . rainbow-mode))
 #+END_SRC
 ** rest
-#+BEGIN_SRC elisp
+*** restclient
+#+BEGIN_SRC elisp :load no
 (leaf restclient  :straight t)
 
 (leaf company-restclient
@@ -1317,6 +1318,12 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t
   :commands (org-babel-execute:restclient))
 #+END_SRC
+*** verb
+#+begin_src elisp
+(leaf verb
+  :straight t
+  :mode ("\\.verb\\'" . verb-mode))
+#+end_src
 ** sql
 #+BEGIN_SRC elisp
 (leaf sqlup-mode
@@ -1471,8 +1478,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   (defun pretty-print-xml-buffer ()
     "pretty print the XML in a buffer."
     (interactive)
-    (pretty-print-xml-region (point-min) (point-max)))
-  :hook (nxml-mode-hook . '(lambda () (when (empty-buffer?) (nxml-template)))))
+    (pretty-print-xml-region (point-min) (point-max))))
 #+END_SRC
 ** yaml
 #+BEGIN_SRC elisp
@@ -1627,22 +1633,21 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :config
   (setq cfw:org-overwrite-default-keybinding t))
 #+END_SRC
-** charmap
-#+BEGIN_SRC elisp
-(leaf charmap
-  :commands charmap
-  :straight t
-  :setq (charmap-text-scale-adjust . 2))
-#+END_SRC
 ** comment-dwim-2
-#+BEGIN_SRC elisp
+#+begin_src elisp
 (leaf comment-dwim-2
   :straight t
   :leaf-defer nil
   :bind* ("M-;" . comment-dwim-2))
-#+END_SRC
+#+end_src
+** demo-it
+#+begin_src elisp
+(leaf demo-it
+  :straight t
+  :require t)
+#+end_src
 ** docker
-#+BEGIN_SRC elisp
+#+begin_src elisp
 (leaf docker :straight t)
 
 (leaf dockerfile-mode
@@ -1652,7 +1657,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 (leaf docker-compose-mode
   :straight t
   :mode ("docker-compose.*\.yml\\'" . docker-compose-mode))
-#+END_SRC
+#+end_src
 ** dumb-jump
 #+BEGIN_SRC elisp
 (leaf dumb-jump
@@ -1664,6 +1669,291 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
          ("M-g z" . dumb-jump-go-prefer-external-other-window))
   :config (setq dumb-jump-selector 'ivy))
 #+END_SRC
+** email
+*** message
+#+begin_src elisp
+(leaf message
+  :setq ((message-citation-line-format . "\nEl %A %d de %B del %Y a las %H%M horas, %N escribió:\n")
+         (message-citation-line-function . 'message-insert-formatted-citation-line)
+         (message-cite-reply-position . 'below)
+         (message-kill-buffer-on-exit . t)
+         (message-send-mail-function . 'message-send-mail-with-sendmail)
+         (sendmail-program . "msmtp"))
+  :config
+  (defun extract-email (str)
+    ;; return last sub-string looking like an email address
+    (let ((tokens (reverse (split-string-and-unquote str)))
+          (match))
+      (dolist (token tokens)
+        (string-match "<?\\([^ ]+@[^ ]+\.[^ >]+\\)>?" token)
+        (setq match (or match (match-string 1 token))))
+      match))
+
+  (defun choose-msmtp-account ()
+    (if (message-mail-p)
+        (save-excursion
+          (let*
+              ((from (save-restriction
+                       (message-narrow-to-headers)
+                       (message-fetch-field "from")))
+               (account (extract-email from)))
+            (setq message-sendmail-extra-arguments (list '"-a" account))))))
+  :hook (message-send-mail-hook . choose-msmtp-account))
+#+end_src
+*** mu4e
+#+begin_src elisp
+(leaf mu4e
+  :if (executable-find "mu")
+  :bind (("<f1>" . mu4e)
+         (mu4e-main-mode-map
+          ("j" . conf:mu4e~headers-jump-to-maildir))
+         (mu4e-headers-mode-map
+          ("j" . conf:mu4e~headers-jump-to-maildir)))
+  :preface
+  (defadvice mu4e (before mu4e-start activate)
+    "Antes de ejecutar `mu4e' borramos todas las ventanas"
+    (when (> 1 (count-windows))
+      (window-configuration-to-register :mu4e-fullscreen)
+      (delete-other-windows)))
+  :init
+  (require 'mu4e-contrib)
+  (setq mail-user-agent 'mu4e-user-agent
+        mu4e-attachment-dir  "~/Descargas"
+        mu4e-auto-retrieve-keys t
+        mu4e-compose-context-policy 'ask
+        mu4e-compose-dont-reply-to-self t
+        mu4e-change-filenames-when-moving t
+        mu4e-compose-keep-self-cc nil
+        mu4e-context-policy 'pick-first
+        mu4e-headers-date-format "%Y-%m-%d %H:%M"
+        mu4e-headers-include-related t
+        mu4e-headers-auto-update nil
+        mu4e-headers-leave-behavior 'ignore
+        mu4e-headers-from-or-to-prefix '("" . "➜ ")
+        mu4e-headers-visible-lines 8
+        mu4e-headers-fields '((:human-date    .   10)
+                              (:from          .   30)
+                              (:to            .   30)
+                              (:flags         .   10)
+                              (:maildir       .   30)
+                              (:subject       .   nil))
+        mu4e-view-fields '(:from
+                           :to
+                           :cc
+                           :bcc
+                           :subject
+                           :flags
+                           :date
+                           :maildir
+                           :mailing-list
+                           :tags
+                           :attachments
+                           :signature)
+        mu4e-html2text-command "w3m -dump -T text/html -cols 72 -o display_link_number=true -o auto_image=false -o display_image=true -o ignore_null_img_alt=true"
+        mu4e-maildir (expand-file-name "~/mail")
+        mu4e-view-show-images t
+        mu4e-view-show-addresses t
+        mu4e-view-prefer-html t
+        mu4e-index-update-in-background t
+        mu4e-get-mail-command "offlineimap"
+        mu4e-update-interval 300)
+
+  (defun conf:mu4e~headers-jump-to-maildir()
+    (interactive)
+    (let ((maildir (ivy-read "Maildir: " (mu4e-get-maildirs))))
+      (mu4e-headers-search (format "maildir:\"%s\"" maildir))))
+
+  (when (fboundp 'imagemagick-register-types)
+    (imagemagick-register-types))
+
+  :config (run-at-time nil (* 60 5) '(lambda ()
+                                       (interactive)
+                                       (mu4e-update-mail-and-index t)))
+  :hook (mu4e-compose-mode-hook . flyspell-mode))
+
+(leaf org-msg
+  :straight t
+  :require t
+  :config
+  (load-user-file "org-msg")
+  (org-msg-mode))
+
+(leaf mu4e-alert
+  :if (executable-find "mu")
+  :straight t
+  :setq ((mu4e-compose-forward-as-attachment . t)
+         (mu4e-compose-crypto-reply-encrypted-policy . 'sign-and-encrypt)
+         (mu4e-compose-crypto-reply-plain-policy . 'sign)
+         (mu4e-index-update-in-background . t)
+         (mu4e-alert-email-notification-types . '(subjects)))
+  :config
+  (defun conf:refresh-mu4e-alert-mode-line ()
+    (interactive)
+    (mu4e~proc-kill)
+    (mu4e-alert-enable-mode-line-display))
+  (run-with-timer 0 60 'conf:refresh-mu4e-alert-mode-line)
+  (mu4e-alert-set-default-style 'libnotify)
+  :hook ((after-init-hook . mu4e-alert-enable-notifications)
+         (after-init-hook . mu4e-alert-enable-mode-line-display)))
+
+(leaf mu4e-maildirs-extension
+  :if (executable-find "mu")
+  :straight t
+  :after mu4e
+  :setq ((shell-file-name . "/bin/sh")
+         (mu4e-maildirs-extension-hide-empty-maildirs . t)
+         (mu4e-maildirs-extension-maildir-separator . "*")
+         (mu4e-maildirs-extension-submaildir-separator . "✉")
+         (mu4e-maildirs-extension-action-text . nil)
+         (mu4e-maildirs-extension-title . nil))
+  :config (mu4e-maildirs-extension))
+
+(leaf profile
+  :straight (profile
+             :type git
+             :host github
+             :repo "DamienCassou/profile")
+  :bind ("C-c F" . profile-force-profile-in-compose)
+  :after mu4e
+  :init (load-user-file "profile")
+  :hook (mu4e-compose-pre-hook . profile-set-profile-in-compose))
+#+end_src
+*** notmuch
+#+begin_src elisp :load no
+(leaf htmlize
+  :straight t)
+
+(leaf org-msg
+  :load-path "/media/data/dev/arkhan/Code/org-msg"
+  :require t
+  :config
+  (load-user-file "org-msg")
+  (org-msg-mode))
+
+(leaf notmuch
+  :if (executable-find "notmuch")
+  :bind (("<f1>" . notmuch)
+         (notmuch-search-mode-map
+          ;; bind 'r' to reply-all, and 'R' to reply
+          ("r" . notmuch-search-reply-to-thread)
+          ("R" . notmuch-search-reply-to-thread-sender)
+          ("K" . conf:notmuch-mark-read-and-delete)))
+  :setq ((mail-user-agent . 'notmuch-user-agent)
+         (mm-text-html-renderer . 'w3m-standalone)
+         (notmuch-multipart/alternative-discouraged . nil)
+         (notmuch-show-logo . nil)
+         (notmuch-always-prompt-for-sender . t)
+         (notmuch-archive-tags . '("-inbox" "-unread"))
+         (notmuch-crypto-process-mime . t)
+         (notmuch-labeler-hide-known-labels . nil)
+         (notmuch-search-oldest-first . nil)
+         (notmuch-draft-save-plaintext . t))
+  :config
+  (defun conf:notmuch-mark-read-and-delete ()
+    (interactive)
+    (notmuch-search-tag '("-unread" "+delete"))
+    (notmuch-search-archive-thread))
+
+  (defun conf:notmuch-update ()
+    (interactive)
+    ;; create output buffer and jump to beginning
+    (let ((buf (get-buffer-create "*notmuch update*")))
+      (with-current-buffer buf
+        (erase-buffer))
+      (set-process-sentinel
+       (start-process-shell-command "notmuch update" buf "offlineimap -u basic && notmuch new && afew -a -t && notifymuch")
+       ;; refresh notmuch buffers if sync was successful
+       (lambda (_process event)
+         (if (string= event "finished\n")
+             (notmuch-refresh-all-buffers))))))
+  (run-with-timer 0 60 'conf:notmuch-update))
+
+(leaf notmuch-show
+  :bind ((notmuch-show-mode-map
+          ;; bind 'r' to reply-all, and 'R' to reply
+          ("r" . notmuch-show-reply)
+          ("R" . notmuch-show-reply-sender)))
+  :setq ((notmuch-show-imenu-indent . t)
+         (notmuch-message-headers . '("To" "Cc" "Subject" "Date"))
+         (mm-decrypt-option . 'known))
+
+  :config
+  (defun conf:notmuch-show-decrypt-message ()
+    (interactive)
+    ;; make sure the content is not indented, as this confuses epa
+    (when notmuch-show-indent-content
+      (notmuch-show-toggle-thread-indentation))
+
+    (cl-letf ((extent (notmuch-show-message-extent))
+              ((symbol-function 'y-or-n-p) #'(lambda (msg) t)))
+      (epa-decrypt-armor-in-region (car extent) (cdr extent))))
+
+  (defun turn-on-notmuch-show-decrypt-region ()
+    (epa-mail-mode 1)
+    (make-local-variable 'epa-mail-mode-map)
+    (define-key epa-mail-mode-map (kbd "C-c C-e d") nil)
+    (define-key epa-mail-mode-map (kbd "C-c C-e C-d") nil)
+
+    (local-set-key (kbd "C-c C-e d") 'conf:notmuch-show-decrypt-message)
+    (local-set-key (kbd "C-c C-e C-d") 'conf:notmuch-show-decrypt-message))
+  :hook (notmuch-show-hook . turn-on-notmuch-show-decrypt-region))
+
+(leaf org-notmuch
+  :require t
+    :after (:any org notmuch))
+
+  (leaf notmuch-unread
+    :load-path "/home/arkhan/notmuch-unread/"
+    ;; :straight (notmuch-unread
+    ;;            :type git
+    ;;            :host github
+    ;;            :repo "liampwll/notmuch-unread")
+    :require t
+    :config (notmuch-unread-mode t))
+
+  (leaf profile
+    :straight (profile
+               :type git
+               :host github
+               :repo "DamienCassou/profile")
+    :bind ("C-c F" . profile-force-profile-in-compose)
+    :after notmuch
+    :init
+    (load-user-file "profile")
+
+    (defun my:notmuch-build-identity (&optional email)
+      "Return a string of the form \"name <EMAIL>\"."
+      (let ((email (or email user-mail-address)))
+        (format "%s <%s>" (notmuch-user-name) email)))
+
+    (setq notmuch-identities
+          (mapcar #'my:notmuch-build-identity
+                  (profile-email-addresses)))
+
+    (defun my:notmuch-prompt-for-sender ()
+      "Prompt for a sender using `profile-binding-alist'."
+      (profile-set-profile)
+      (my:notmuch-build-identity))
+
+    (advice-add #'notmuch-mua-prompt-for-sender
+                :override
+                #'my:notmuch-prompt-for-sender)
+
+    ;; https://notmuchmail.org/pipermail/notmuch/2017/025320.html
+    (defun my:notmuch-mua-new-reply (arguments)
+      "Always set PROMPT-FOR-SENDER to t when using `notmuch-mua-new-reply'."
+      (list (cl-first arguments) t (cl-third arguments)))
+
+    (advice-add #'notmuch-mua-new-reply :filter-args #'my:notmuch-mua-new-reply)
+    (add-to-list 'notmuch-hello-sections #'profile-queue-insert-section t))
+#+end_src
+*** links
+#+begin_src elisp
+(leaf link-hint
+  :straight t
+  :bind (("C-c l o" . link-hint-open-link)
+         ("C-c l c" . link-hint-copy-link)))
+#+end_src
 ** flyspell
 #+BEGIN_SRC elisp
 (leaf flyspell
@@ -1840,38 +2130,38 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t
   :require t)
 
-;; (leaf git-gutter
-;;   :straight t
-;;   :diminish git-gutter-mode
-;;   :leaf-defer nil
-;;   :bind (("C-x C-g" . git-gutter)
-;;          ("C-x v =" . git-gutter:popup-hunk)
-;;          ("C-x p" . git-gutter:previous-hunk)
-;;          ("C-x n" . git-gutter:next-hunk)
-;;          ("C-x v s" . git-gutter:stage-hunk)
-;;          ("C-x v r" . git-gutter:revert-hunk)
-;;          ("C-x v SPC" . git-gutter:mark-hunk))
-;;   :config
-;;   (if (display-graphic-p)
-;;       (leaf git-gutter-fringe
-;;         :straight t
-;;         :require t
-;;         :config
-;;         (define-fringe-bitmap 'git-gutter-fr:added [224]
-;;           nil nil '(center repeated))
-;;         (define-fringe-bitmap 'git-gutter-fr:modified [224]
-;;           nil nil '(center repeated))
-;;         (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240]
-;;           nil nil 'bottom)))
-;;   (global-git-gutter-mode t)
-;;   (setq indicate-empty-lines nil)
-;;   (setq git-gutter:handled-backends '(git hg bzr svn)))
-
-(leaf diff-hl
+(leaf git-gutter
   :straight t
+  :diminish git-gutter-mode
   :leaf-defer nil
-  :init (global-diff-hl-mode)
-  :hook (magit-post-refresh-hook . diff-hl-magit-post-refresh))
+  :bind (("C-x C-g" . git-gutter)
+         ("C-x v =" . git-gutter:popup-hunk)
+         ("C-x p" . git-gutter:previous-hunk)
+         ("C-x n" . git-gutter:next-hunk)
+         ("C-x v s" . git-gutter:stage-hunk)
+         ("C-x v r" . git-gutter:revert-hunk)
+         ("C-x v SPC" . git-gutter:mark-hunk))
+  :config
+  (if (display-graphic-p)
+      (leaf git-gutter-fringe
+        :straight t
+        :require t
+        :config
+        (define-fringe-bitmap 'git-gutter-fr:added [224]
+          nil nil '(center repeated))
+        (define-fringe-bitmap 'git-gutter-fr:modified [224]
+          nil nil '(center repeated))
+        (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240]
+          nil nil 'bottom)))
+  (global-git-gutter-mode t)
+  (setq indicate-empty-lines nil)
+  (setq git-gutter:handled-backends '(git hg bzr svn)))
+
+;; (leaf diff-hl
+;;   :straight t
+;;   :leaf-defer nil
+;;   :init (global-diff-hl-mode)
+;;   :hook (magit-post-refresh-hook . diff-hl-magit-post-refresh))
 
 (leaf gitconfig-mode
   :straight t
@@ -1913,236 +2203,15 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t
   :hook (logview-mode-hook . auto-revert-mode))
 #+END_SRC
-** COMMENT mu4e
-#+BEGIN_SRC elisp
-(leaf link-hint
+** mingus
+#+begin_src elisp
+(leaf mingus
   :straight t
-  :bind (("C-c l o" . link-hint-open-link)
-         ("C-c l c" . link-hint-copy-link)))
-
-(leaf mu4e
-  :if (executable-find "mu")
-  :bind (("<f1>" . mu4e)
-         (mu4e-main-mode-map
-          ("j" . conf:mu4e~headers-jump-to-maildir))
-         (mu4e-headers-mode-map
-          ("j" . conf:mu4e~headers-jump-to-maildir)))
-  :preface
-  (defadvice mu4e (before mu4e-start activate)
-    "Antes de ejecutar `mu4e' borramos todas las ventanas"
-    (when (> 1 (count-windows))
-      (window-configuration-to-register :mu4e-fullscreen)
-      (delete-other-windows)))
-  :init
-  (require 'mu4e-contrib)
-  (setq mail-user-agent 'mu4e-user-agent
-        message-citation-line-format "\nEl %A %d de %B del %Y a las %H%M horas, %N escribió:\n"
-        message-citation-line-function 'message-insert-formatted-citation-line
-        message-cite-reply-position 'below
-        message-kill-buffer-on-exit t
-        message-send-mail-function 'message-send-mail-with-sendmail
-        mu4e-attachment-dir  "~/Descargas"
-        mu4e-auto-retrieve-keys t
-        mu4e-compose-context-policy 'ask
-        mu4e-compose-dont-reply-to-self t
-        mu4e-change-filenames-when-moving t
-        mu4e-compose-keep-self-cc nil
-        mu4e-context-policy 'pick-first
-        mu4e-headers-date-format "%Y-%m-%d %H:%M"
-        mu4e-headers-include-related t
-        mu4e-headers-auto-update nil
-        mu4e-headers-leave-behavior 'ignore
-        mu4e-headers-from-or-to-prefix '("" . "➜ ")
-        mu4e-headers-visible-lines 8
-        mu4e-headers-fields '((:human-date    .   20)
-                              (:flags         .   10)
-                              (:maildir       .   20)
-                              (:from          .   22)
-                              (:subject       .   nil))
-        mu4e-html2text-command "w3m -dump -T text/html -cols 72 -o display_link_number=true -o auto_image=false -o display_image=true -o ignore_null_img_alt=true"
-        mu4e-maildir (expand-file-name "~/mail")
-        mu4e-view-show-images t
-        mu4e-view-show-addresses t
-        mu4e-view-prefer-html t
-        sendmail-program "msmtp"
-        mu4e-get-mail-command "offlineimap")
-
-  (defun conf:mu4e~headers-jump-to-maildir()
-    (interactive)
-    (let ((maildir (ivy-read "Maildir: " (mu4e-get-maildirs))))
-      (mu4e-headers-search (format "maildir:\"%s\"" maildir))))
-
-  (defun extract-email (str)
-    ;; return last sub-string looking like an email address
-    (let ((tokens (reverse (split-string-and-unquote str)))
-          (match))
-      (dolist (token tokens)
-        (string-match "<?\\([^ ]+@[^ ]+\.[^ >]+\\)>?" token)
-        (setq match (or match (match-string 1 token))))
-      match))
-
-  (defun choose-msmtp-account ()
-    (if (message-mail-p)
-        (save-excursion
-          (let*
-              ((from (save-restriction
-                       (message-narrow-to-headers)
-                       (message-fetch-field "from")))
-               (account (extract-email from)))
-            (setq message-sendmail-extra-arguments (list '"-a" account))))))
-
-  (when (fboundp 'imagemagick-register-types)
-    (imagemagick-register-types))
-
-  (run-at-time nil (* 60 5) 'mu4e-update-mail-and-index t)
-  :hook ((mu4e-compose-mode-hook . flyspell-mode)
-         (message-send-mail-hook . choose-msmtp-account)))
-
-(leaf profile
-  :straight (profile
-             :type git
-             :host github
-             :repo "DamienCassou/profile")
-  :bind ("C-c F" . profile-force-profile-in-compose)
-  :after mu4e
-  :init (load-user-file "profile")
-  :hook (mu4e-compose-pre-hook . profile-set-profile-in-compose))
-
-
-(leaf org-msg
-  :straight t
+  :bind ("M-3" . mingus)
   :require t
+  :setq (mingus-mpd-config-file . "~/.config/mpd/mpd.conf")
   :config
-  (load-user-file "org-msg")
-  (org-msg-mode))
-
-(leaf mu4e-alert
-  :if (executable-find "mu")
-  :straight t
-  :config
-  (defun conf:mu4e-alert-default-mode-line-formatter (mail-count)
-    (when (not (zerop mail-count))
-      (concat
-       " "
-       (propertize
-        (format "#%d " mail-count)
-        'face font-lock-keyword-face
-        'help-echo (concat (if (= mail-count 1)
-                               "You have an unread email"
-                             (format "You have %s unread emails" mail-count))
-                           "\nClick here to view "
-                           (if (= mail-count 1) "it" "them"))
-        'mouse-face 'mode-line-highlight
-        'keymap '(mode-line keymap
-                            (mouse-1 . mu4e-alert-view-unread-mails)
-                            (mouse-2 . mu4e-alert-view-unread-mails)
-                            (mouse-3 . mu4e-alert-view-unread-mails))))))
-
-  (setq mu4e-alert-modeline-formatter 'conf:mu4e-alert-default-mode-line-formatter
-        mu4e-compose-forward-as-attachment t
-        mu4e-compose-crypto-reply-encrypted-policy 'sign-and-encrypt
-        mu4e-compose-crypto-reply-plain-policy 'sign
-        mu4e-index-update-in-background t
-        mu4e-alert-email-notification-types '(subjects))
-
-  (defun conf:refresh-mu4e-alert-mode-line ()
-    (interactive)
-    (mu4e~proc-kill)
-    (mu4e-alert-enable-mode-line-display))
-  (run-with-timer 0 60 'conf:refresh-mu4e-alert-mode-line)
-  (mu4e-alert-set-default-style 'libnotify)
-  :hook ((after-init-hook . mu4e-alert-enable-notifications)
-         (after-init-hook . mu4e-alert-enable-mode-line-display)))
-
-(leaf mu4e-maildirs-extension
-  :if (executable-find "mu")
-  :straight t
-  :after mu4e
-  :setq ((shell-file-name . "/bin/sh")
-         (mu4e-maildirs-extension-hide-empty-maildirs . t)
-         (mu4e-maildirs-extension-maildir-separator . "*")
-         (mu4e-maildirs-extension-submaildir-separator . "✉")
-         (mu4e-maildirs-extension-action-text . nil)
-         (mu4e-maildirs-extension-title . nil))
-  :config (mu4e-maildirs-extension))
-#+END_SRC
-** notmuch
-#+begin_src elisp :load no
-(leaf org-msg
-  :straight (org-msg
-             :type git
-             :host github
-             :repo "arkhan/org-msg"
-             :branch "notmuch_backend")
-  :require t
-  :config
-  (load-user-file "org-msg")
-  (org-msg-mode))
-
-
-(leaf notmuch
-  :straight t
-  :preface (setq-default notmuch-command (executable-find "notmuch"))
-  :if notmuch-command
-  :bind (("C-. m" . notmuch)
-         (notmuch-search-mode-map
-          ;; bind 'r' to reply-all, and 'R' to reply
-          ("r" . notmuch-search-reply-to-thread)
-          ("R" . notmuch-search-reply-to-thread-sender)))
-  :init
-  (progn
-    (setq notmuch-always-prompt-for-sender t)
-    (setq notmuch-archive-tags '("-inbox" "-unread"))
-    (setq notmuch-crypto-process-mime t)
-    (setq notmuch-hello-sections '(notmuch-hello-insert-saved-searches))
-    (setq notmuch-labeler-hide-known-labels t)
-    (setq notmuch-search-oldest-first nil)
-    (setq notmuch-draft-save-plaintext t)))
-
-(leaf notmuch-show
-  :bind ((notmuch-show-mode-map
-          ;; bind 'r' to reply-all, and 'R' to reply
-          ("r" . notmuch-show-reply)
-          ("R" . notmuch-show-reply-sender))
-         (notmuch-show-part-map
-          ("d" . my/notmuch-show-ics-to-org-part)
-          ("a" . nico-notmuch-git-am-patch)))
-  :init
-  (progn
-    (setq notmuch-show-imenu-indent t)
-    (setq notmuch-message-headers '("To" "Cc" "Subject" "Date"))
-
-    (defun nico-notmuch-git-am-part (handle)
-      (let ((dir (read-directory-name "Git directory: ")))
-        (mm-pipe-part handle (format "cd %s; git am" (expand-file-name dir)))))
-
-    (defun nico-notmuch-git-am-patch ()
-      "Apply the MIME part at point as a git patch using `git am'."
-      (interactive)
-      (notmuch-show-apply-to-current-part-handle #'nico-notmuch-git-am-part))
-
-    (defun my/mm-ics-to-org-part (handle &optional prompt)
-      "Add message part HANDLE to org."
-      (ignore prompt)
-      (mm-with-unibyte-buffer
-        (mm-insert-part handle)
-        (mm-add-meta-html-tag handle)
-        (require 'org-caldav)
-        (org-caldav-import-ics-buffer-to-org)))
-
-    (defun my/notmuch-show-ics-to-org-part ()
-      "Save the .ics MIME part containing point to an org file."
-      (interactive)
-      (notmuch-show-apply-to-current-part-handle #'my/mm-ics-to-org-part))))
-
-
-(leaf profile
-  :straight (profile
-             :type git
-             :host github
-             :repo "DamienCassou/profile")
-  :bind ("C-c F" . profile-force-profile-in-compose)
-  :init (load-user-file "profile"))
+  (require 'mingus-stays-home))
 #+end_src
 ** nginx
 #+BEGIN_SRC elisp
@@ -2150,13 +2219,23 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t
   :mode ("/nginx/sites-\\(?:available\\|enabled\\)/" . nginx-mode))
 #+END_SRC
-** org
+** COMMENT org
 #+BEGIN_SRC elisp
 (leaf org
   :straight org-plus-contrib
   :bind (("C-x a" . org-agenda-list)
          ("C-x c" . org-capture))
   :diminish org-indent-mode
+  :setq `((org-modules . '(ol-bbdb
+                           ol-bibtex ol-docview ol-info
+                           org-crypt org-protocol org-id
+                           org-habit org-annotate-file
+                           org-eval org-expiry org-tempo
+                           org-panel org-toc ox-md))
+          (org-id-locations-file . ,(concat conf:cache-dir "org-id.el"))
+          (org-directory . "~/org")
+          (org-default-notes-file . ,(concat org-directory "/notes.org"))
+          )
   :config
   (progn
     (add-hook 'org-mode-hook
@@ -2165,16 +2244,10 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
                 (org-indent-mode)
                 (switch-dictionary)))
 
-    ;; set the modules enabled by default
-    (setq org-modules '(org-crypt org-protocol org-id
-                        org-habit org-annotate-file
-                        org-eval org-expiry org-tempo
-                        org-panel org-toc ox-md))
-
-    ;; set default directories
-    (setq org-id-locations-file (concat conf:cache-dir "org-id.el")
-          org-directory "~/org"
-          org-default-notes-file (concat org-directory "/notes.org"))
+    ;; ;; set default directories
+    ;; (setq org-id-locations-file (concat conf:cache-dir "org-id.el")
+    ;;       org-directory "~/org"
+    ;;       org-default-notes-file (concat org-directory "/notes.org"))
 
     ;; set the archive
     (setq org-archive-location (concat org-directory "/archive.org::datetree/** Archived"))
@@ -2215,27 +2288,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
           org-todo-keywords (quote
                              ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
                               (sequence "WAITING(w)" "HOLD(h)" "|" "CANCELLED(c)" "PHONE" "MEETING"))))
-
-    ;; agenda & diary
-    (setq org-columns-default-format "%50ITEM(Task) %10CLOCKSUM %16TIMESTAMP_IA")
-    (setq org-agenda-include-diary nil
-          org-agenda-tags-todo-honor-ignore-options t
-          org-agenda-start-on-weekday nil
-          org-agenda-start-day "-1d"
-          org-agenda-span 7
-          show-week-agenda-p t
-          org-agenda-timegrid-use-ampm 1
-          org-agenda-inhibit-startup t
-          org-agenda-files (quote
-                            ("~/org/work.org"
-                             "~/org/stuff.org")))
-
-    (setq org-agenda-custom-commands
-          '(("Q" . "Custom queries") ;; gives label to "Q"
-            ("Qa" "Archive search" search "" ((org-agenda-files (file-expand-wildcards "~/org/archive.org"))))
-            ("n" todo "NEXT")
-            ("w" todo "WAITING")
-            ("d" "Agenda + Next Actions" ((agenda) (todo "NEXT")))))
 
     ;; date insertion configuration
     (setq org-expiry-created-property-name "CREATED"
@@ -2286,65 +2338,61 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
     ;; refresh images after execution
     (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images)))
 
-(leaf org-contacts
-  :straight org-plus-contrib
-  :require t
-  :setq (org-contacts-files . (quote
-                               ("~/org/contacts.org"))))
-
-(leaf org-vcard
-  :straight t
-  :require t
-  :setq (org-vcard-default-style . "tree"))
-
-(leaf secretaria
-  :straight t
-  :require t
-  :hook (after-init-hook . secretaria-unknown-time-always-remind-me))
-
-(leaf ob-sql
-  :leaf-defer nil
-  :straight org-plus-contrib
-  :commands (org-babel-execute:sql))
-
-(leaf ob-python
-  :leaf-defer nil
-  :straight org-plus-contrib
-  :commands (org-babel-execute:python))
-
-(leaf ob-shell
-  :leaf-defer nil
-  :straight org-plus-contrib
-  :commands (org-babel-execute:shell
-             org-babel-expand-body:shell))
-
-(leaf ob-plantuml
-  :leaf-defer nil
-  :straight org-plus-contrib
-  :commands (org-babel-execute:plantuml)
-  :config (setq org-plantuml-jar-path "/usr/share/java/plantuml/plantuml.jar"))
-
 (leaf org-bullets
   :straight t
   :hook (org-mode-hook . org-bullets-mode))
 
-(leaf ob-async :straight t)
-(leaf ob-translate :straight t)
-(leaf org-re-reveal :straight t)
-(leaf htmlize :straight t)
+(leaf org-agenda
+  :straight org-plus-contrib
+  :require t
+  :setq ((org-columns-default-format . "%50ITEM(Task) %10CLOCKSUM %16TIMESTAMP_IA")
+         (org-agenda-include-diary . nil)
+         (org-agenda-tags-todo-honor-ignore-options . t)
+         (org-agenda-start-on-weekday . nil)
+         (org-agenda-start-day . "-1d")
+         (org-agenda-span . 7)
+         (show-week-agenda-p . t)
+         (org-agenda-timegrid-use-ampm . 1)
+         (org-agenda-inhibit-startup . t)
+         (org-agenda-files . (quote
+                              ("~/org/work.org"
+                               "~/org/stuff.org")))
+         (org-agenda-custom-commands . '(("Q" . "Custom queries") ;; gives label to "Q"
+                                         ("Qa" "Archive search" search "" ((org-agenda-files (file-expand-wildcards "~/org/archive.org"))))
+                                         ("n" todo "NEXT")
+                                         ("w" todo "WAITING")
+                                         ("d" "Agenda + Next Actions" ((agenda) (todo "NEXT")))))))
 
-;; ;; Changing font sizes
-;; (leaf default-text-scale
-;;   :straight t
-;;   :bind (("C-M-=" . default-text-scale-increase)
-;;          ("C-M--" . default-text-scale-decrease)
-;;          ("C-M-0" . default-text-scale-reset))
-;;   :require t)
-
-;; (leaf hide-mode-line :straight t :require t)
+(leaf doct
+  :straight t
+  :leaf-defer nil
+  :commands (doct)
+  :config
+  (setq org-capture-templates
+      (doct '(("Work" :keys "w"
+               :file "~/org/work.org"
+               :prepend t
+               :template ("* %doct(todo-state) %^{Description}"
+                          "SCHEDULED: %(org-insert-time-stamp (org-read-date nil t \"+0d\"))"
+                          ":PROPERTIES:"
+                          ":CREATED: %U"
+                          ":CATEGORY: %doct(headline)%"
+                          ":END:"
+                          "%?")
+               :children (("Task"  :keys "w"
+                           :headline   "Task"
+                           :todo-state "TODO"
+                           :hook (lambda () (message "\"First Child\" selected.")))
+                          ("Second Child" :keys "2"
+                           :headline   "Two"
+                           :todo-state "NEXT")
+                          ("Third Child"  :keys "3"
+                           :headline   "Three"
+                           :todo-state "MAYBE")))))))
 
 (leaf org-super-agenda
   :straight t
+  :after (org-agenda)
   :config
   (setq org-super-agenda-groups '((:name "Today"
                                          :time-grid t
@@ -2363,6 +2411,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 
 (leaf org-sidebar
   :straight t
+  :after (org-agenda)
   :setq (org-sidebar-side . 'left)
   :config
   (defun conf:org-today-sidebar ()
@@ -2384,6 +2433,63 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
                                 (:priority "A")
                                 (:name "Non-tasks"
                                        :todo nil))))))
+
+(leaf org-contacts
+  :straight org-plus-contrib
+  :require t
+  :setq (org-contacts-files . (quote
+                               ("~/org/contacts.org"))))
+
+(leaf org-vcard
+  :straight t
+  :require t
+  :setq (org-vcard-default-style . "tree"))
+
+(leaf secretaria
+  :straight t
+  :require t
+  :hook (after-init-hook . secretaria-unknown-time-always-remind-me))
+
+(leaf ob-ditaa
+  :leaf-defer nil
+  :straight org-plus-contrib
+  :commands (org-babel-execute:ditaa)
+  :setq (org-ditaa-jar-path . "/usr/share/java/ditaa/ditaa-0.11.jar"))
+
+(leaf ob-sql
+  :leaf-defer nil
+  :straight org-plus-contrib
+  :commands (org-babel-execute:sql))
+
+(leaf ob-python
+  :leaf-defer nil
+  :straight org-plus-contrib
+  :commands (org-babel-execute:python))
+
+(leaf ob-shell
+  :leaf-defer nil
+  :straight org-plus-contrib
+  :commands (org-babel-execute:shell
+             org-babel-expand-body:shell))
+
+(leaf ob-plantuml
+  :leaf-defer nil
+  :straight org-plus-contrib
+  :commands (org-babel-execute:plantuml)
+  :setq (org-plantuml-jar-path . "/usr/share/java/plantuml/plantuml.jar"))
+
+(leaf ob-async
+  :straight t)
+
+(leaf ob-translate
+  :straight t)
+
+(leaf org-re-reveal
+  :straight t
+  :require t)
+
+(leaf htmlize
+  :straight t)
  #+END_SRC
 ** org-tree-slide
 #+BEGIN_SRC elisp
@@ -2434,10 +2540,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
         (setq conf:writegood-mode-state writegood-mode)
         (writegood-mode -1))
       (flyspell-mode -1)
-      ;;(hide-mode-line-mode)
-      (org-toggle-inline-images)
-      (setq-local hrs/font-change-increment 2)
-      (hrs/increase-font-size))
+      (conf:org-tree-slide-set-profile)
+      (org-toggle-inline-images))
 
     (defun conf:org-tree-slide-stop()
       "Undo the frame setup for the slideshow."
@@ -2448,8 +2552,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
         (setq conf:writegood-mode-state nil))
       (flyspell-mode 1)
       ;;(hide-mode-line-mode -1)
-      (org-remove-inline-images)
-      (hrs/reset-font-size))
+      (org-remove-inline-images))
 
     (defun conf:org-tree-slide-text-scale-reset ()
       "Reset time scale to `modi/org-tree-slide-text-scale'."
@@ -2650,7 +2753,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t
   :bind (("C-<f5>" . terminal-here-launch)
          ("C-<f6>" . terminal-here-project-launch))
-  :config (setq terminal-here-terminal-command (list "kitty" "--name=ETmux" "tmx")))
+  :config (setq terminal-here-terminal-command (list "kitty" "--class=ETmux" "tmx")))
 #+END_SRC
 ** ssh
 #+BEGIN_SRC elisp
@@ -2662,7 +2765,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
                            (setq dirtrackp nil))))
 (leaf ssh-config-mode
   :straight t
-  :require t
   :mode (("/\\.ssh/config\\'" . ssh-config-mode)
          ("/sshd?_config\\'" . ssh-config-mode)
          ("/known_hosts\\'" . ssh-known-hosts-mode)
@@ -2674,8 +2776,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 (leaf sudo-edit
   :straight t)
 #+END_SRC
-** undo-tree
-#+begin_src elisp
+** undo
+#+begin_src elisp :load no
 (leaf undo-tree
   :straight (undo-tree
              :type git
@@ -2688,6 +2790,14 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :config
   (defalias 'redo 'undo-tree-redo)
   (global-undo-tree-mode 1))
+#+end_src
+#+begin_src elisp
+(leaf undo-fu-session
+  :straight t
+  :pre-setq `((undo-fu-session-incompatible-files . '("/COMMIT_EDITMSG\\'" "/git-rebase-todo\\'"))
+              (undo-fu-session-directory . ,(concat conf:cache-dir "undo-fu"))
+              (undo-fu-session-compression . t))
+  :hook (after-init-hook . global-undo-fu-session-mode))
 #+end_src
 ** vlf
 #+BEGIN_SRC elisp

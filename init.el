@@ -3,9 +3,9 @@
 ;; This config start here
 
 (defvar cfg--file-name-handler-alist file-name-handler-alist)
-(setq gc-cons-threshold 402653184
-      gc-cons-percentage 0.6
-      file-name-handler-alist nil)
+;; (setq gc-cons-threshold 402653184
+;;       gc-cons-percentage 0.6
+;;       file-name-handler-alist nil)
 
 (defvar conf:cache-dir (concat user-emacs-directory "cache/"))
 (unless (file-exists-p conf:cache-dir)
@@ -45,6 +45,10 @@
    :files (:defaults "contrib/lisp/*.el")
    :includes (org)))
 
+(straight-use-package 'gcmh)
+(require 'gcmh)
+(gcmh-mode 1)
+
 (straight-use-package 'literate-elisp)
 (require 'literate-elisp)
 (literate-elisp-load (expand-file-name "README.org" user-emacs-directory))
@@ -52,13 +56,7 @@
 ;; Use a hook so the message doesn't get clobbered by other messages.
 (add-hook 'emacs-startup-hook
           (lambda ()
-            (setq gc-cons-threshold 16777216
-                  gc-cons-percentage 0.1
-                  file-name-handler-alist cfg--file-name-handler-alist)))
+            (setq file-name-handler-alist cfg--file-name-handler-alist)))
+
 (provide 'init)
-
-;; Local Variables:
-;; indent-tabs-mode: nil
-;; End:
-
 ;;; init.el ends here
