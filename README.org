@@ -312,19 +312,18 @@
 
 (leaf dashboard
   :straight t
-  :setq `((dashboard-banner-logo-title . ,(concat "GNU Emacs " emacs-version
-                                                  " kernel " (car (split-string (shell-command-to-string "uname -r") "-"))
-                                                  " x86_64 " (car (split-string (shell-command-to-string "/usr/bin/sh -c '. /etc/os-release && echo $PRETTY_NAME'") "\n"))))
-          (dashboard-startup-banner . 'logo)
-          (dashboard-set-init-info . nil)
-          (dashboard-center-content . t)
-          (dashboard-set-heading-icons . t)
-          (dashboard-set-file-icons . t)
-          (dashboard-items . '((recents  . 10)
-                               (bookmarks . 5)
-                               (projects . 5)
-                               (agenda . 5)))
-          (initial-buffer-choice . '(lambda () (switch-to-buffer "*dashboard*"))))
+  :pre-setq `((dashboard-banner-logo-title . ,(concat "GNU Emacs " emacs-version
+                                                      " kernel " (car (split-string (shell-command-to-string "uname -r") "-"))
+                                                      " x86_64 " (car (split-string (shell-command-to-string "/usr/bin/sh -c '. /etc/os-release && echo $PRETTY_NAME'") "\n"))))
+              (dashboard-startup-banner . 'logo)
+              (dashboard-center-content . t)
+              (dashboard-set-heading-icons . t)
+              (dashboard-set-file-icons . t)
+              (dashboard-items . '((recents  . 10)
+                                   (bookmarks . 5)
+                                   (projects . 5)
+                                   (agenda . 5)))
+              (initial-buffer-choice . '(lambda () (switch-to-buffer "*dashboard*"))))
   :config (dashboard-setup-startup-hook))
 #+END_SRC
 ** font
@@ -346,7 +345,7 @@
 *** config
 #+BEGIN_SRC elisp
 (setq conf:font-name "PragmataPro Mono Liga"
-      conf:font-size 13.5
+      conf:font-size 12.0
       inhibit-compacting-font-caches t)
 
 (defun fc-list ()
@@ -515,23 +514,23 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :after ivy
   :init (ivy-prescient-mode))
 
-(leaf ivy-posframe
-  :straight t
-  :after ivy
-  :diminish ivy-posframe-mode
-  :setq ((ivy-posframe-hide-minibuffer . t)
-         (ivy-fixed-height-minibuffer . nil)
-         (ivy-posframe-parameters . `((min-width . ,(frame-width))
-                                      (internal-border-width . 1)))
-         (ivy-display-function . #'ivy-posframe-display-at-frame-bottom-left))
-  :config (ivy-posframe-mode))
+;; (leaf ivy-posframe
+;;   :straight t
+;;   :after ivy
+;;   :diminish ivy-posframe-mode
+;;   :setq ((ivy-posframe-hide-minibuffer . t)
+;;          (ivy-fixed-height-minibuffer . nil)
+;;          (ivy-posframe-parameters . `((min-width . ,(frame-width))
+;;                                       (internal-border-width . 1)))
+;;          (ivy-display-function . #'ivy-posframe-display-at-frame-bottom-left))
+;;   :config (ivy-posframe-mode))
 
 ;; (leaf ivy-explorer
 ;;   :straight t
 ;;   :after (ivy)
 ;;   :init
-;;   (if (display-graphic-p)
-;;        (setq ivy-explorer-message-function #'ivy-explorer--posframe))
+;;   ;; (if (display-graphic-p)
+;;        ;; (setq ivy-explorer-message-function #'ivy-explorer--posframe))
 ;;   (ivy-explorer-mode))
 
 (leaf ivy-xref
@@ -594,25 +593,56 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
              :files ("*.el" "index.html" "static"))
   :commands (maple-preview-mode))
 
-;; (leaf maple-minibuffer
-;;   :straight (maple-minibuffer
+(leaf maple-minibuffer
+  :straight (maple-minibuffer
+             :type git
+             :host github
+             :repo "honmaple/emacs-maple-minibuffer")
+  :require t
+  :setq ((maple-minibuffer:height . nil)
+         (maple-minibuffer:position-type . 'frame-bottom-left)
+         (maple-minibuffer:border-color . "gray50"))
+  :config
+  ;; more custom parameters for frame
+  (defun maple-minibuffer:parameters ()
+    "Maple minibuffer parameters."
+    `((height . ,(or maple-minibuffer:height 10))
+      (width . ,(or (round (* (frame-width) 0.62)) maple-minibuffer:width))
+      (left-fringe . 5)
+      (right-fringe . 5)))
+  (add-to-list 'maple-minibuffer:ignore-action 'org-schedule)
+  :hook (after-init-hook . maple-minibuffer-mode))
+
+;; (leaf maple-scratch
+;;   :straight (maple-scratch
 ;;              :type git
 ;;              :host github
-;;              :repo "honmaple/emacs-maple-minibuffer")
-;;   :require t
-;;   :setq ((maple-minibuffer:height . nil)
-;;          (maple-minibuffer:position-type . 'frame-bottom-left)
-;;          (maple-minibuffer:border-color . "gray50"))
+;;              :repo "honmaple/emacs-maple-scratch")
+;;   :hook (window-setup-hook . maple-scratch-mode)
 ;;   :config
-;;   ;; more custom parameters for frame
-;;   (defun maple-minibuffer:parameters ()
-;;     "Maple minibuffer parameters."
-;;     `((height . ,(or maple-minibuffer:height 10))
-;;       (width . ,(or (round (* (frame-width) 0.62)) maple-minibuffer:width))
-;;       (left-fringe . 5)
-;;       (right-fringe . 5)))
+;;   (setq maple-scratch-source t
+;;         maple-scratch-number 6
+;;         maple-scratch-center t
+;;         maple-scratch-empty t
+;;         maple-scratch-write-mode 'emacs-lisp-mode
+;;         maple-scratch-items '(maple-scratch-banner
+;;                               maple-scratch-navbar
+;;                               maple-scratch-default
+;;                               maple-scratch-startup))
 
-;;   :hook (after-init-hook . maple-minibuffer-mode))
+;;   (setq maple-scratch-navbar-alist
+;;         '(("HOME"
+;;            :action (lambda() (find-file (expand-file-name "init.el" user-emacs-directory)))
+;;            :desc "Browse home")
+;;           ("CAPTURE"
+;;            :action 'org-capture
+;;            :desc "Open Org Capture")
+;;           ("AGENDA"
+;;            :action 'org-agenda
+;;            :desc "Open Org Agenda")
+;;           ("HELP"
+;;            :action (lambda() (find-file (expand-file-name "README.org" user-emacs-directory)))
+;;            :desc "Emacs Help"))))
 #+end_src
 ** minibuffer
 #+begin_src elisp :load no
@@ -626,61 +656,64 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+end_src
 ** modeline
 #+BEGIN_SRC elisp
-(leaf doom-modeline
+;; (leaf doom-modeline
+;;   :straight t
+;;   :setq ((doom-modeline-icon . nil)
+;;          (doom-modeline-height . 12)
+;;          (doom-modeline-env-enable-python . nil)
+;;          (doom-modeline-checker-simple-format . nil)
+;;          (doom-modeline-mu4e  . '(fboundp 'mu4e))
+;;          (mode-line-percent-position . nil)
+;;          (line-number-mode . t)
+;;          (column-number-mode . t))
+;;   :config
+;;   (defun conf:doom-modeline--make-xpm-filter-args (args)
+;;     "Force function to use `doom-modeline-height'.
+;;      Instead of the calculation done in `doom-modeline-refresh-bars'.
+;;      The minimum height is set to `frame-char-height' + 2."
+;;     (list (car args) (cadr args) (max (+ (frame-char-height) 2) doom-modeline-height)))
+
+;;   (advice-add 'doom-modeline--make-xpm :filter-args #'conf:doom-modeline--make-xpm-filter-args)
+
+;;   :hook (emacs-startup-hook . doom-modeline-mode))
+
+(leaf smart-mode-line
   :straight t
-  :setq ((doom-modeline-icon . nil)
-         (doom-modeline-height . 12)
-         (doom-modeline-env-enable-python . nil)
-         (doom-modeline-checker-simple-format . nil)
-         (doom-modeline-mu4e  . '(fboundp 'mu4e))
-         (mode-line-percent-position . nil)
-         (line-number-mode . t)
-         (column-number-mode . t))
-  :config
-  (defun conf:doom-modeline--make-xpm-filter-args (args)
-    "Force function to use `doom-modeline-height'.
-     Instead of the calculation done in `doom-modeline-refresh-bars'.
-     The minimum height is set to `frame-char-height' + 2."
-    (list (car args) (cadr args) (max (+ (frame-char-height) 2) doom-modeline-height)))
+  :setq ((line-number-mode . t)
+         (column-number-mode . t)
+         (sml/mode-width . 10)
+         (sml/no-confirm-load-theme . t)
+         (sml/theme . 'respectful))
+  :hook (emacs-startup-hook . sml/setup))
 
-  (advice-add 'doom-modeline--make-xpm :filter-args #'conf:doom-modeline--make-xpm-filter-args)
+(leaf mini-modeline
+  :straight t
+  :custom-face ((mini-modeline-mode-line . '((t (:background "dim gray" :box nil :height 0.1))))
+                (mini-modeline-mode-line-inactive . '((t (:background "#333333" :box nil :height 0.1)))))
+  :setq ((mini-modeline-truncate-p . t)
+         (mini-modeline-)
+         (mini-modeline-r-format . '("%e"
+                                     mode-line-front-space
+                                     mode-line-mule-info
+                                     mode-line-client
+                                     mode-line-modified
+                                     mode-line-remote
+                                     mode-line-frame-identification
+                                     mode-line-buffer-identification
+                                     (vc-mode vc-mode)
+                                     " "
+                                     mode-line-position
+                                     " "
+                                     mode-line-modes
+                                     mode-line-misc-info
+                                     mode-line-end-spaces)))
+  :hook (emacs-startup-hook . mini-modeline-mode))
 
-  :hook (emacs-startup-hook . doom-modeline-mode))
-
-;; (leaf smart-mode-line
-;;   :straight t
-;;   :setq ((line-number-mode . t)
-;;          (column-number-mode . t)
-;;          (sml/mode-width . 10)
-;;          (sml/no-confirm-load-theme . t)
-;;          (sml/theme . 'dark))
-;;   :hook (emacs-startup-hook . sml/setup))
-
-;; (leaf mini-modeline
-;;   :straight t
-;;   :setq ((mini-modeline-truncate-p . t)
-;;          (mini-modeline-r-format . '("%e"
-;;                                      mode-line-front-space
-;;                                      mode-line-mule-info
-;;                                      mode-line-client
-;;                                      mode-line-modified
-;;                                      mode-line-remote
-;;                                      mode-line-frame-identification
-;;                                      mode-line-buffer-identification
-;;                                      (vc-mode vc-mode)
-;;                                      " "
-;;                                      mode-line-position
-;;                                      " "
-;;                                      mode-line-modes
-;;                                      mode-line-misc-info
-;;                                      mode-line-end-spaces)))
-;;   :hook (emacs-startup-hook . mini-modeline-mode))
-
-;; (leaf rich-minority
-;;   :straight t
-;;   :setq ((rm-blacklist . nil)
-;;          (rm-whitelist . "FlyC\\|Flymake\\|lsp"))
-;;   :hook (emacs-startup-hook . rich-minority-mode))
+(leaf rich-minority
+  :straight t
+  :setq ((rm-blacklist . nil)
+         (rm-whitelist . "FlyC\\|Flymake\\|lsp"))
+  :hook (emacs-startup-hook . rich-minority-mode))
 #+END_SRC
 ** move-dup
 #+BEGIN_SRC elisp
@@ -779,7 +812,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 (leaf shackle
   :straight t
   :setq ((shackle-default-size . 0.4)
-         (shackle-rules . '(("*Calendar*" :select t :size 0.3 :align below)
+         (shackle-rules . '(("*Bufler*" :select t :size 0.3 :align left :popup t)
+                            ("*Calendar*" :select t :size 0.3 :align below)
                             ("*Compile-Log*" :ignore t)
                             ("*Completions*" :size 0.3  :align t)
                             ("*format-all-errors*" :select t :size 0.1 :align below)
@@ -827,7 +861,75 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
          ("<C-mouse-5>" . zoom-out))
   :setq (zoom-frame/buffer . 'frame))
 #+end_src
-
+** buffers
+#+begin_src elisp
+(leaf bufler
+  :straight (bufler
+             :type git
+             :host github
+             :repo "alphapapa/bufler.el")
+  :require t
+  :bind ("C-x C-b" . bufler)
+  :setq (bufler-columns . '("Name" "Path"))
+  :config
+  (bufler-defgroups
+   (group
+    ;; Subgroup collecting all named workspaces.
+    (auto-workspace))
+   (group
+    ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
+    (group-or "*Help/Info*"
+              (mode-match "*Help*" (rx bos "help-"))
+              (mode-match "*Info*" (rx bos "info-"))))
+   (group
+    ;; Subgroup collecting all special buffers (i.e. ones that are not
+    ;; file-backed), except `magit-status-mode' buffers (which are allowed to fall
+    ;; through to other groups, so they end up grouped with their project buffers).
+    (group-and "*Special*"
+               (lambda (buffer)
+                 (unless (or (funcall (mode-match "Magit" (rx bos "magit-status"))
+                                      buffer)
+                             (funcall (mode-match "Dired" (rx bos "dired"))
+                                      buffer)
+                             (funcall (auto-file) buffer))
+                   "*Special*")))
+    (group
+     ;; Subgroup collecting these "special special" buffers
+     ;; separately for convenience.
+     (name-match "**Special**"
+                 (rx bos "*" (or "Messages" "Warnings" "scratch" "Backtrace") "*")))
+    (group
+     ;; Subgroup collecting all other Magit buffers, grouped by directory.
+     (mode-match "*Magit* (non-status)" (rx bos (or "magit" "forge") "-"))
+     (auto-directory))
+    ;; Subgroup for Helm buffers.
+    (mode-match "*Helm*" (rx bos "helm-"))
+    ;; Remaining special buffers are grouped automatically by mode.
+    (auto-mode))
+   ;; All buffers under "~/.emacs.d" (or wherever it is).
+   (dir user-emacs-directory)
+   (group
+    ;; Subgroup collecting buffers in `org-directory' (or "~/org" if
+    ;; `org-directory' is not yet defined).
+    (dir (if (bound-and-true-p org-directory)
+             org-directory
+           "~/org"))
+    (group
+     ;; Subgroup collecting indirect Org buffers, grouping them by file.
+     ;; This is very useful when used with `org-tree-to-indirect-buffer'.
+     (auto-indirect)
+     (auto-file))
+    ;; Group remaining buffers by whether they're file backed, then by mode.
+    (group-not "*special*" (auto-file))
+    (auto-mode))
+   (group
+    ;; Subgroup collecting buffers in a version-control project,
+    ;; grouping them by directory.
+    (auto-project))
+   ;; Group remaining buffers by directory, then major mode.
+   (auto-directory)
+   (auto-mode)))
+#+end_src
 * Prog
 ** company
 #+BEGIN_SRC elisp
@@ -1057,6 +1159,9 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :pre-setq `(lsp-session-file . ,(concat conf:cache-dir "lsp-session"))
   :setq ((lsp-eldoc-render-all . nil)
          (lsp-print-io . nil)
+         (lsp-enable-folding . nil)
+         (lsp-enable-snippet . nil)
+         (lsp-restart . 'auto-restart)
          (lsp-inhibit-message . t)
          (lsp-message-project-root-warning . t)
          (lsp-auto-guess-root . t)
@@ -1234,14 +1339,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t
   :require t
   :pre-setq `((lsp-python-ms-dir . ,(expand-file-name "mspyls/" conf:cache-dir))
-              (lsp-python-ms-python-executable-cmd . "python"))
-  :config
-  (require 'smartparens-python)
-  (require 'electric)
-  (projectile-register-project-type 'python '("pyproject.toml")
-                                    :compile ""
-                                    :test "")
-  :hook (python-mode-hook . lsp-deferred))
+              (lsp-python-ms-python-executable-cmd . "python")))
 #+end_src
 *** lsp-python
 #+BEGIN_SRC elisp
@@ -1322,6 +1420,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+begin_src elisp
 (leaf verb
   :straight t
+  :require t
   :mode ("\\.verb\\'" . verb-mode))
 #+end_src
 ** sql
@@ -1523,6 +1622,12 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
              :files ("*.el" "snippets"))
   :after yasnippet)
 #+END_SRC
+** emmet
+#+begin_src elisp
+(leaf emmet-mode
+  :straight t
+  :hook (sgml-mode-hook web-mode-hook css-mode-hook mhtml-mode-hook))
+#+end_src
 * Tools
 ** alert
 #+BEGIN_SRC elisp
@@ -1575,6 +1680,11 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 (leaf bug-hunter
   :straight t
   :commands (bug-hunter-file bug-hunter-init-file))
+
+(leaf benchmark-init
+  :straight t
+  :require t
+  :hook (after-init-hook . benchmark-init/deactivate))
 #+END_SRC
 ** autorevert
 #+BEGIN_SRC elisp
@@ -2045,7 +2155,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
         flyspell-correct-auto-mode-interface #'frog-menu-flyspell-correct))
 #+END_SRC
 ** frog
-#+BEGIN_SRC elisp
+#+BEGIN_SRC elisp :load no
 (leaf frog-jump-buffer
   :straight t
   :bind ("C-x C-b" . frog-jump-buffer))
@@ -2219,7 +2329,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t
   :mode ("/nginx/sites-\\(?:available\\|enabled\\)/" . nginx-mode))
 #+END_SRC
-** COMMENT org
+** org
 #+BEGIN_SRC elisp
 (leaf org
   :straight org-plus-contrib
@@ -2338,9 +2448,11 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
     ;; refresh images after execution
     (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images)))
 
-(leaf org-bullets
+(leaf org-superstar
   :straight t
-  :hook (org-mode-hook . org-bullets-mode))
+  :require t
+  :setq (org-superstar-leading-bullet . "  ")
+  :hook (org-mode-hook . (lambda () (org-superstar-mode 1))))
 
 (leaf org-agenda
   :straight org-plus-contrib
@@ -2363,32 +2475,32 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
                                          ("w" todo "WAITING")
                                          ("d" "Agenda + Next Actions" ((agenda) (todo "NEXT")))))))
 
-(leaf doct
-  :straight t
-  :leaf-defer nil
-  :commands (doct)
-  :config
-  (setq org-capture-templates
-      (doct '(("Work" :keys "w"
-               :file "~/org/work.org"
-               :prepend t
-               :template ("* %doct(todo-state) %^{Description}"
-                          "SCHEDULED: %(org-insert-time-stamp (org-read-date nil t \"+0d\"))"
-                          ":PROPERTIES:"
-                          ":CREATED: %U"
-                          ":CATEGORY: %doct(headline)%"
-                          ":END:"
-                          "%?")
-               :children (("Task"  :keys "w"
-                           :headline   "Task"
-                           :todo-state "TODO"
-                           :hook (lambda () (message "\"First Child\" selected.")))
-                          ("Second Child" :keys "2"
-                           :headline   "Two"
-                           :todo-state "NEXT")
-                          ("Third Child"  :keys "3"
-                           :headline   "Three"
-                           :todo-state "MAYBE")))))))
+;; (leaf doct
+;;   :straight t
+;;   :require t
+;;   :commands (doct)
+;;   :config
+;;   (setq org-capture-templates
+;;       (doct '(("Work" :keys "w"
+;;                :file "~/org/work.org"
+;;                :prepend t
+;;                :template ("* %doct(todo-state) %^{Description}"
+;;                           "SCHEDULED: %(org-insert-time-stamp (org-read-date nil t \"+0d\"))"
+;;                           ":PROPERTIES:"
+;;                           ":CREATED: %U"
+;;                           ":CATEGORY: %doct-keys(headline)%"
+;;                           ":END:"
+;;                           "%?")
+;;                :children (("Task"
+;;                            :keys "t"
+;;                            :headline "Task"
+;;                            :todo-state "TODO")
+;;                           ("Second Child" :keys "2"
+;;                            :headline   "Two"
+;;                            :todo-state "NEXT")
+;;                           ("Third Child"  :keys "3"
+;;                            :headline   "Three"
+;;                            :todo-state "MAYBE")))))))
 
 (leaf org-super-agenda
   :straight t
@@ -2630,6 +2742,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+BEGIN_SRC elisp
 (leaf pdf-tools
   :straight t
+  :leaf-defer nil
   :bind (pdf-view-mode-map
          ("<s-spc>" .  pdf-view-scroll-down-or-next-page)
          ("g"  . pdf-view-first-page)
@@ -2662,6 +2775,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 
 (leaf org-pdfview
   :straight t
+  :leaf-defer nil
   :require t)
 #+END_SRC
 ** pkgbuil
