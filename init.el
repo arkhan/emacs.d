@@ -11,6 +11,8 @@
 (unless (file-exists-p conf:cache-dir)
   (make-directory conf:cache-dir))
 
+(defvar conf:bin-dir (concat (getenv "HOME") "/.bin/"))
+
 (setq nsm-settings-file (concat conf:cache-dir "network-security.data"))
 (setq network-security-level 'high)
 
@@ -47,6 +49,9 @@
 
 (straight-use-package 'gcmh)
 (require 'gcmh)
+(setq gcmh-low-cons-threshold 300000000
+      read-process-output-max (* 1024 1024))
+
 (gcmh-mode 1)
 
 (straight-use-package 'literate-elisp)

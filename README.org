@@ -18,7 +18,7 @@
 * Config
 ** base
 #+BEGIN_SRC elisp :load no
-;;; init.el --- Emacs Configuration -*- lexical-binding: t -*-
+;;; init.el --- Emacs Configuration -*- lexical-binding: t -*
 ;;; Commentary:
 ;; This config start here
 
@@ -77,9 +77,13 @@
   :require t
   :init
   (leaf leaf-keywords
+    :emacs> 24.4
     :require t
     :init
     (leaf-keywords-init)))
+
+(leaf leaf-convert
+  :straight t)
 
 (leaf async
   :straight t
@@ -87,10 +91,10 @@
   :setq (async-bytecomp-package-mode . t))
 
 (setq inhibit-startup-screen t
-      use-dialog-box nil
-      use-file-dialog nil
-      initial-scratch-message nil
-      large-file-warning-threshold (* 15 1024 1024))
+	  use-dialog-box nil
+	  use-file-dialog nil
+	  initial-scratch-message nil
+	  large-file-warning-threshold (* 15 1024 1024))
 
 (menu-bar-mode -1)
 (tool-bar-mode -1)
@@ -107,20 +111,20 @@
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
 (setq-default buffer-file-coding-system 'utf-8-auto-unix
-              x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
+		      x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
 
 (setq auto-save-default nil
-      auto-save-list-file-prefix nil
-      make-backup-files nil
-      create-lockfiles nil
-      frame-resize-pixelwise t
-      ring-bell-function 'ignore
-      major-mode 'text-mode)
-      ;current-language-environment "Spanish")
+	  auto-save-list-file-prefix nil
+	  make-backup-files nil
+	  create-lockfiles nil
+	  frame-resize-pixelwise t
+	  ring-bell-function 'ignore
+	  major-mode 'text-mode)
+                                        ;current-language-environment "Spanish")
 
 (setq-default indent-tabs-mode nil
-              tab-width 4
-              frame-title-format (list (user-login-name) "@" (system-name) " %b [%m]"))
+		      tab-width 4
+		      frame-title-format (list (user-login-name) "@" (system-name) " %b [%m]"))
 
 (global-set-key (kbd "RET") 'newline-and-indent)
 (global-set-key (kbd "<f5>") 'revert-buffer)
@@ -152,7 +156,7 @@
       (write-file custom-file)))
   (load custom-file)
   (savehist-mode t)
-  (ido-mode nil))
+  (ido-mode -1))
 #+end_src
 ** abbrev
 #+BEGIN_SRC elisp
@@ -240,8 +244,8 @@
 ** tramp
 #+BEGIN_SRC elisp
 (leaf tramp
-  ;;:straight t
-  ;;:require t
+  :straight t
+  :require t
   :pre-setq `((tramp-persistency-file-name . ,(concat conf:cache-dir "tramp"))
               (tramp-auto-save-directory . ,(concat conf:cache-dir "tramp-autosave")))
   :setq ((tramp-default-method . "scp")
@@ -257,10 +261,10 @@
                                               "password" "Password"
                                               "Verification code")
                                             t)
-                                           ".*:\0? *"))))
-  ;;:config
-  ;;(tramp-set-completion-function "ssh" '((tramp-parse-sconfig "/etc/ssh_config")
-  ;;                                       (tramp-parse-sconfig "~/.ssh/config"))))
+                                           ".*:\0? *")))
+  :config
+  (tramp-set-completion-function "ssh" '((tramp-parse-sconfig "/etc/ssh_config")
+                                         (tramp-parse-sconfig "~/.ssh/config"))))
 
 (leaf counsel-tramp
   :straight t
@@ -314,7 +318,7 @@
   :straight t
   :pre-setq `((dashboard-banner-logo-title . ,(concat "GNU Emacs " emacs-version
                                                       " kernel " (car (split-string (shell-command-to-string "uname -r") "-"))
-                                                      " x86_64 " (car (split-string (shell-command-to-string "/usr/bin/sh -c '. /etc/os-release && echo $PRETTY_NAME'") "\n"))))
+                                                      " x86_64 " (car (split-string (shell-command-to-string "/bin/sh -c '. /etc/os-release && echo $PRETTY_NAME'") "\n"))))
               (dashboard-startup-banner . 'logo)
               (dashboard-center-content . t)
               (dashboard-set-heading-icons . t)
@@ -328,106 +332,113 @@
 #+END_SRC
 ** font
 *** unicode-fonts
-#+begin_src elisp :load no
+#+begin_src elisp
 (leaf pcache
   :straight t
   :setq `(pcache-directory . ,(let ((dir (concat conf:cache-dir "pcache/")))
-                              (make-directory dir t)
-                              dir)))
+                                (make-directory dir t)
+                                dir)))
 
 (leaf unicode-fonts
   :straight t
+  :require t
   :init
-  (leaf persistent-soft
-    :straight t
-    :config (unicode-fonts-setup)))
+  ;; (setq unicode-fonts-block-font-mapping
+  ;;     '(("Emoticons"
+  ;;        ("DejaVu Sans Mono")))
+  ;;     unicode-fonts-fontset-names '("fontset-default"))
+  (unicode-fonts-setup))
 #+end_src
 *** config
 #+BEGIN_SRC elisp
-(setq conf:font-name "PragmataPro Mono Liga"
-      conf:font-size 12.0
-      inhibit-compacting-font-caches t)
+(leaf emacs
+  :config
+  (setq conf:font-family "PragmataPro Mono Liga"
+        conf:font-name "PragmataPro Mono Liga"
+        conf:font-size 13.5
+        inhibit-compacting-font-caches t)
 
-(defun fc-list ()
-  "Genera una lista de tipografías disponibles usando fc-list"
-  (if (executable-find "fc-list")
-      (split-string (shell-command-to-string "fc-list --format='%{family[0]}\n' | sort | uniq") "\n")
-    (progn
-      (warn "fc-list no disponible en $PATH")
-      nil)))
+  (defun fc-list ()
+    "Genera una lista de tipografías disponibles usando fc-list"
+    (if (executable-find "fc-list")
+        (split-string (shell-command-to-string "fc-list --format='%{family[0]}\n' | sort | uniq") "\n")
+      (progn
+        (warn "fc-list no disponible en $PATH")
+        nil)))
 
-(defun font-exists-p (font)
-  "Comprueba si una tipografía FONT existe.
+  (defun font-exists-p (font)
+    "Comprueba si una tipografía FONT existe.
 
 Código parcialmente sacado de https://redd.it/1xe7vr"
-  (let ((font-list (or (font-family-list) (fc-list))))
-    (if (member font font-list)
-        t
-      nil)))
+    (let ((font-list (or (font-family-list) (fc-list))))
+      (if (member font font-list)
+          t
+        nil)))
 
-(defun font-pt-to-height (pt)
-  "Transforma una altura en puntos PT a altura de `face-attribute'."
-  ;; el valor es de 1/10pt, por tanto 100 seria equivalente a 10pt, etc.
-  (truncate (* pt 10)))
+  (defun font-pt-to-height (pt)
+    "Transforma una altura en puntos PT a altura de `face-attribute'."
+    ;; el valor es de 1/10pt, por tanto 100 seria equivalente a 10pt, etc.
+    (truncate (* pt 10)))
 
-(defun font-setup (&optional frame)
-  (cond ((font-exists-p conf:font-name)
-         (set-face-attribute 'default frame :height (font-pt-to-height conf:font-size) :font conf:font-name))))
+  (defun font-setup (&optional frame)
+    (cond ((font-exists-p conf:font-family)
+           (set-face-attribute 'default frame :height (font-pt-to-height conf:font-size) :font conf:font-name))))
 
-(defun font-setup-frame (frame)
-  "configura la tipografía por cada nuevo marco FRAME creado."
-  (select-frame frame)
-  (when (display-graphic-p)
-    (font-setup frame)))
+  (defun font-setup-frame (frame)
+    "configura la tipografía por cada nuevo marco FRAME creado."
+    (select-frame frame)
+    (when (display-graphic-p)
+      (font-setup frame)))
 
-(if (daemonp)
-    (add-hook 'after-make-frame-functions #'font-setup-frame)
-  (font-setup))
-
+  (if (daemonp)
+      (add-hook 'after-make-frame-functions #'font-setup-frame)
+    (font-setup)))
+#+END_SRC
+*** pretty
+#+BEGIN_SRC elisp
 (leaf composite
   :leaf-defer nil
+  :emacs>="27.0"
   :config
   (dolist (hook `(ediff-mode-hook
                   mu4e-headers-mode-hook
                   notmuch-show-mode-hook
-                  org-mode-hook
                   package-menu-mode-hook))
     (add-hook hook (lambda () (setq-local auto-composition-mode nil))))
 
   ;; support ligatures, some toned down to prevent hang
-  (when (version<= "27.0" emacs-version)
-    (let ((alist
-           '((33 . ".\\(?:\\(==\\|[!=]\\)[!=]?\\)")
-             (35 . ".\\(?:\\(###?\\|_(\\|[(:=?[_{]\\)[#(:=?[_{]?\\)")
-             (36 . ".\\(?:\\(>\\)>?\\)")
-             (37 . ".\\(?:\\(%\\)%?\\)")
-             (38 . ".\\(?:\\(&\\)&?\\)")
-             (42 . ".\\(?:\\(\\*\\*\\|[*>]\\)[*>]?\\)")
-             ;; (42 . ".\\(?:\\(\\*\\*\\|[*/>]\\).?\\)")
-             (43 . ".\\(?:\\([>]\\)>?\\)")
-             ;; (43 . ".\\(?:\\(\\+\\+\\|[+>]\\).?\\)")
-             (45 . ".\\(?:\\(-[->]\\|<<\\|>>\\|[-<>|~]\\)[-<>|~]?\\)")
-             (46 . ".\\(?:\\(\\.[.<]\\|[-.=]\\)[-.<=]?\\)")
-             (47 . ".\\(?:\\(//\\|==\\|[=>]\\)[/=>]?\\)")
-             ;; (47 . ".\\(?:\\(//\\|==\\|[*/=>]\\).?\\)")
-             (48 . ".\\(?:\\(x[a-fA-F0-9]\\).?\\)")
-             (58 . ".\\(?:\\(::\\|[:<=>]\\)[:<=>]?\\)")
-             (59 . ".\\(?:\\(;\\);?\\)")
-             (60 . ".\\(?:\\(!--\\|\\$>\\|\\*>\\|\\+>\\|-[-<>|]\\|/>\\|<[-<=]\\|=[<>|]\\|==>?\\||>\\||||?\\|~[>~]\\|[$*+/:<=>|~-]\\)[$*+/:<=>|~-]?\\)")
-             (61 . ".\\(?:\\(!=\\|/=\\|:=\\|<<\\|=[=>]\\|>>\\|[=>]\\)[=<>]?\\)")
-             (62 . ".\\(?:\\(->\\|=>\\|>[-=>]\\|[-:=>]\\)[-:=>]?\\)")
-             (63 . ".\\(?:\\([.:=?]\\)[.:=?]?\\)")
-             (91 . ".\\(?:\\(|\\)|?\\)")
-             ;; (92 . ".\\(?:\\([\\n]\\)[\\]?\\)")
-             (94 . ".\\(?:\\(=\\)=?\\)")
-             (95 . ".\\(?:\\(|_\\|[_]\\)_?\\)")
-             (119 . ".\\(?:\\(ww\\)w?\\)")
-             (123 . ".\\(?:\\(|\\).?\\)")
-             (124 . ".\\(?:\\(->\\|=>\\||[-=>]\\||||*>\\|[]=>|}-]\\).?\\)")
-             (126 . ".\\(?:\\(~>\\|[-=>@~]\\).?\\)"))))
-      (dolist (char-regexp alist)
-        (set-char-table-range composition-function-table (car char-regexp)
-                              `([,(cdr char-regexp) 0 font-shape-gstring]))))))
+  (let ((alist
+         '((33 . ".\\(?:\\(==\\|[!=]\\)[!=]?\\)")
+           (35 . ".\\(?:\\(###?\\|_(\\|[(:=?[_{]\\)[#(:=?[_{]?\\)")
+           (36 . ".\\(?:\\(>\\)>?\\)")
+           (37 . ".\\(?:\\(%\\)%?\\)")
+           (38 . ".\\(?:\\(&\\)&?\\)")
+           (42 . ".\\(?:\\(\\*\\*\\|[*>]\\)[*>]?\\)")
+           ;; (42 . ".\\(?:\\(\\*\\*\\|[*/>]\\).?\\)")
+           (43 . ".\\(?:\\([>]\\)>?\\)")
+           ;; (43 . ".\\(?:\\(\\+\\+\\|[+>]\\).?\\)")
+           (45 . ".\\(?:\\(-[->]\\|<<\\|>>\\|[-<>|~]\\)[-<>|~]?\\)")
+           (46 . ".\\(?:\\(\\.[.<]\\|[-.=]\\)[-.<=]?\\)")
+           (47 . ".\\(?:\\(//\\|==\\|[=>]\\)[/=>]?\\)")
+           ;; (47 . ".\\(?:\\(//\\|==\\|[*/=>]\\).?\\)")
+           (48 . ".\\(?:\\(x[a-fA-F0-9]\\).?\\)")
+           (58 . ".\\(?:\\(::\\|[:<=>]\\)[:<=>]?\\)")
+           (59 . ".\\(?:\\(;\\);?\\)")
+           (60 . ".\\(?:\\(!--\\|\\$>\\|\\*>\\|\\+>\\|-[-<>|]\\|/>\\|<[-<=]\\|=[<>|]\\|==>?\\||>\\||||?\\|~[>~]\\|[$*+/:<=>|~-]\\)[$*+/:<=>|~-]?\\)")
+           (61 . ".\\(?:\\(!=\\|/=\\|:=\\|<<\\|=[=>]\\|>>\\|[=>]\\)[=<>]?\\)")
+           (62 . ".\\(?:\\(->\\|=>\\|>[-=>]\\|[-:=>]\\)[-:=>]?\\)")
+           (63 . ".\\(?:\\([.:=?]\\)[.:=?]?\\)")
+           (91 . ".\\(?:\\(|\\)|?\\)")
+           ;; (92 . ".\\(?:\\([\\n]\\)[\\]?\\)")
+           (94 . ".\\(?:\\(=\\)=?\\)")
+           (95 . ".\\(?:\\(|_\\|[_]\\)_?\\)")
+           (119 . ".\\(?:\\(ww\\)w?\\)")
+           (123 . ".\\(?:\\(|\\).?\\)")
+           (124 . ".\\(?:\\(->\\|=>\\||[-=>]\\||||*>\\|[]=>|}-]\\).?\\)")
+           (126 . ".\\(?:\\(~>\\|[-=>@~]\\).?\\)"))))
+    (dolist (char-regexp alist)
+      (set-char-table-range composition-function-table (car char-regexp)
+                            `([,(cdr char-regexp) 0 font-shape-gstring])))))
 
 (add-hook 'org-mode-hook '(lambda ()
                             (mapc (lambda (pair) (push pair prettify-symbols-alist))
@@ -456,7 +467,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
                                (font-lock-add-keywords
                                 nil
                                 '(("\\<\\(FIX\\|FIXME\\|TODO\\|BUG\\|HACK\\):" 1 font-lock-warning-face t)))))
-(global-prettify-symbols-mode)
+
+(add-hook 'after-init-hook #'global-prettify-symbols-mode)
 #+END_SRC
 ** imenu
 #+begin_src elisp :load no
@@ -569,6 +581,29 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :setq (ivy-format-function . 'ivy-format-function-line)
   :config (ivy-rich-mode))
 #+END_SRC
+** selectrum
+#+BEGIN_SRC elisp :load no
+(leaf selectrum
+  :straight t
+  :require t
+  :config (selectrum-mode +1))
+
+(leaf selectrum-prescient
+  :straight t
+  :require t
+  :after (selectrum)
+  :config
+  ;; to make sorting and filtering more intelligent
+  (selectrum-prescient-mode +1)
+
+  ;; to save your command history on disk, so the sorting gets more
+  ;; intelligent over time
+  (prescient-persist-mode +1))
+
+(leaf ctrlf
+  :straight t
+  :hook (after-init-hook))
+#+END_SRC
 ** maple
 #+begin_src elisp
 (leaf maple-imenu
@@ -593,25 +628,30 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
              :files ("*.el" "index.html" "static"))
   :commands (maple-preview-mode))
 
-(leaf maple-minibuffer
-  :straight (maple-minibuffer
-             :type git
-             :host github
-             :repo "honmaple/emacs-maple-minibuffer")
-  :require t
-  :setq ((maple-minibuffer:height . nil)
-         (maple-minibuffer:position-type . 'frame-bottom-left)
-         (maple-minibuffer:border-color . "gray50"))
-  :config
-  ;; more custom parameters for frame
-  (defun maple-minibuffer:parameters ()
-    "Maple minibuffer parameters."
-    `((height . ,(or maple-minibuffer:height 10))
-      (width . ,(or (round (* (frame-width) 0.62)) maple-minibuffer:width))
-      (left-fringe . 5)
-      (right-fringe . 5)))
-  (add-to-list 'maple-minibuffer:ignore-action 'org-schedule)
-  :hook (after-init-hook . maple-minibuffer-mode))
+;; (leaf maple-minibuffer
+;;   :straight (maple-minibuffer
+;;              :type git
+;;              :host github
+;;              :repo "honmaple/emacs-maple-minibuffer")
+;;   :require t
+;;   :setq ((maple-minibuffer:height . nil)
+;;          (maple-minibuffer:position-type . 'frame-bottom-left)
+;;          (maple-minibuffer:border-color . "gray50")
+;;          (maple-minibuffer:width . 0.7)
+;;          (maple-minibuffer:cache . nil)
+;;          (maple-minibuffer:action . '(read-from-minibuffer read-string))
+;;          (maple-minibuffer:ignore-action . '(org-schedule org-time-stamp eval-expression))
+;;          (maple-minibuffer:ignore-regexp . '("^anzu-" "^mu4e-" "^yes-" "^save-")))
+;;   :config
+;;   ;; more custom parameters for frame
+;;   (defun maple-minibuffer:parameters ()
+;;     "Maple minibuffer parameters."
+;;     `((height . ,(or maple-minibuffer:height 10))
+;;       (width . ,(or (round (* (frame-width) 0.80)) maple-minibuffer:width))
+;;       (left-fringe . 5)
+;;       (right-fringe . 5)))
+
+;;   :hook (after-init-hook . maple-minibuffer-mode))
 
 ;; (leaf maple-scratch
 ;;   :straight (maple-scratch
@@ -656,27 +696,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+end_src
 ** modeline
 #+BEGIN_SRC elisp
-;; (leaf doom-modeline
-;;   :straight t
-;;   :setq ((doom-modeline-icon . nil)
-;;          (doom-modeline-height . 12)
-;;          (doom-modeline-env-enable-python . nil)
-;;          (doom-modeline-checker-simple-format . nil)
-;;          (doom-modeline-mu4e  . '(fboundp 'mu4e))
-;;          (mode-line-percent-position . nil)
-;;          (line-number-mode . t)
-;;          (column-number-mode . t))
-;;   :config
-;;   (defun conf:doom-modeline--make-xpm-filter-args (args)
-;;     "Force function to use `doom-modeline-height'.
-;;      Instead of the calculation done in `doom-modeline-refresh-bars'.
-;;      The minimum height is set to `frame-char-height' + 2."
-;;     (list (car args) (cadr args) (max (+ (frame-char-height) 2) doom-modeline-height)))
-
-;;   (advice-add 'doom-modeline--make-xpm :filter-args #'conf:doom-modeline--make-xpm-filter-args)
-
-;;   :hook (emacs-startup-hook . doom-modeline-mode))
-
 (leaf smart-mode-line
   :straight t
   :setq ((line-number-mode . t)
@@ -743,6 +762,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
           ("+" . neotree-create-node)
           ("d" . neotree-delete-node)
           ("r" . neotree-rename-node)))
+  :setq-default (neo-persist-show . t)
   :setq ((neo-theme . 'ascii)
          (neo-vc-integration . nil)
          (neo-window-width . 36)
@@ -753,7 +773,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
          (neo-banner-message . nil)
          (neo-mode-line-type . 'none)
          (neo-dont-be-alone . t)
-         (neo-persist-show . t)
          (neo-show-updir-line . nil)
          (neo-show-hidden-files . nil)
          (neo-auto-indent-point . t)
@@ -812,7 +831,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 (leaf shackle
   :straight t
   :setq ((shackle-default-size . 0.4)
-         (shackle-rules . '(("*Bufler*" :select t :size 0.3 :align left :popup t)
+         (shackle-rules . '(
+                            ;;("*Bufler*" :select t :size 0.3 :align left :popup t)
                             ("*Calendar*" :select t :size 0.3 :align below)
                             ("*Compile-Log*" :ignore t)
                             ("*Completions*" :size 0.3  :align t)
@@ -838,6 +858,55 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
                             (pdf-view-mode :other t)
                             (compilation-mode :select nil))))
   :hook (emacs-startup-hook . shackle-mode))
+
+;; (leaf hide-mode-line
+;;   :straight t
+;;   :require t)
+;; (leaf doom-popup
+;;   :load-path "~/doom-popup"
+;;   :require t
+;;   :config
+;;   (set-popup-rule! "^ ?\\*NeoTree" :slot 2 :side left :size 20 :select t :quit t)
+;;   (+popup-mode 1))
+#+END_SRC
+** popwin
+#+BEGIN_SRC elisp :load no
+(leaf popwin
+  :straight t
+  :require t
+  :config
+  ;; buffers that we manage
+  (progn
+    (push '("*Help*"                 :dedicated t :position bottom :stick t :noselect nil   :height 0.4) popwin:special-display-config)
+    (push '(po-subedit-mode          :dedicated t :height 0.4) popwin:special-display-config)
+    (push '("*Process List*"         :dedicated t :position bottom :stick t :noselect nil :height 0.4) popwin:special-display-config)
+    (push '("*compilation*"          :dedicated t :position bottom :stick t :noselect t   :height 0.4) popwin:special-display-config)
+    (push '("*Shell Command Output*" :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
+    (push '("*Async Shell Command*"  :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
+    (push '(" *undo-tree*"           :dedicated t :position right  :stick t :noselect nil :width   60) popwin:special-display-config)
+    (push '("*undo-tree Diff*"       :dedicated t :position bottom :stick t :noselect nil :height 0.3) popwin:special-display-config)
+    (push '("*ert*"                  :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
+    (push '("*grep*"                 :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
+    (push '("*nosetests*"            :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
+    (push '("^\*WoMan.+\*$" :regexp t             :position bottom                                   ) popwin:special-display-config)
+    (push '("^\*ivy.+\*$"   :regexp t             :position bottom :stick t               :height 0.3) popwin:special-display-config)
+    (push '("^\*counsel.+\*$"   :regexp t             :position bottom :stick t               :height 0.3) popwin:special-display-config)
+    (push '("*Google Translate*"     :dedicated t :position bottom :stick t :noselect t   :height 0.4) popwin:special-display-config)
+    (push '("*frequencies*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.4) popwin:special-display-config)
+    (push '("*Synonyms List*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.4) popwin:special-display-config)
+    (push '("*Ledger Report*"     :dedicated t :position right :stick t :noselect nil   :width 0.6) popwin:special-display-config)
+    (push '("\*Outline.*\*"     :regexp t :dedicated t :position right :stick t :noselect nil   :width 0.3) popwin:special-display-config)
+    (push '("*PDF-Occur*"     :dedicated t :position right :stick t :noselect nil   :width 0.4) popwin:special-display-config)
+    (push '("^ ?\\*NeoTree" :regexp t :dedicated t :stick t :position left  :width 0.4) popwin:special-display-config)
+    (push '("*WordNut*"     :dedicated t :position right :stick t :noselect nil   :width 0.5) popwin:special-display-config)
+    (push '("*Synonyms List*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.4) popwin:special-display-config)
+    (push '("*Calendar*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.4) popwin:special-display-config)
+    (push '("*Youdao Dictionary*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.25) popwin:special-display-config)
+    (push '("*Anaconda*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.25) popwin:special-display-config)
+    (push '(flycheck-error-list-mode     :dedicated t :position bottom :stick t :noselect nil   :height 0.25) popwin:special-display-config)
+    (push '("*Compile-Log*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.25) popwin:special-display-config)
+    (push '("*Apropos*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.25) popwin:special-display-config)
+    (popwin-mode 1)))
 #+END_SRC
 ** switch-windows
 #+BEGIN_SRC elisp
@@ -869,7 +938,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
              :host github
              :repo "alphapapa/bufler.el")
   :require t
-  :bind ("C-x C-b" . bufler)
+  :bind ("C-x C-b" . bufler-switch-buffer)
   :setq (bufler-columns . '("Name" "Path"))
   :config
   (bufler-defgroups
@@ -1126,6 +1195,24 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
     :fringe-face 'flycheck-fringe-info)
   :hook (after-init-hook . global-flycheck-mode))
 #+END_SRC
+** flymake
+#+BEGIN_SRC elisp :load no
+(leaf flymake-proc
+  :setq-default (flymake-diagnostic-functions . nil))
+
+(leaf flymake
+  :straight (flymake :type built-in)
+  :setq (flymake-fringe-indicator-position . 'right-fringe))
+
+(leaf flymake-diagnostic-at-point
+  :straight (flymake-diagnostic-at-point
+             :type git
+             :host github
+             :repo "waymondo/flymake-diagnostic-at-point")
+  :after (flymake)
+  :setq (flymake-diagnostic-at-point-display-diagnostic-function . 'flymake-diagnostic-at-point-display-posframe)
+  :hook (flymake-mode-hook . flymake-diagnostic-at-point-mode))
+#+END_SRC
 ** format
 #+BEGIN_SRC elisp
 (leaf format-all
@@ -1151,22 +1238,26 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+END_SRC
 ** lsp
 #+begin_src elisp
-(leaf lsp
-  :straight lsp-mode
+(leaf lsp-mode
+  :straight t
   :commands (lsp lsp-deferred)
   :require t
   :config (require 'lsp-clients)
   :pre-setq `(lsp-session-file . ,(concat conf:cache-dir "lsp-session"))
-  :setq ((lsp-eldoc-render-all . nil)
-         (lsp-print-io . nil)
+  :setq ((lsp-auto-guess-root . t)
          (lsp-enable-folding . nil)
          (lsp-enable-snippet . nil)
-         (lsp-restart . 'auto-restart)
+         (lsp-enable-symbol-highlighting . nil)
+         (lsp-idle-delay . 0.500)
          (lsp-inhibit-message . t)
          (lsp-message-project-root-warning . t)
-         (lsp-auto-guess-root . t)
+         (lsp-prefer-capf . t)
          (lsp-prefer-flymake . nil)
-         (lsp-signature-auto-activate . nil))
+         (lsp-print-io . nil)
+         (lsp-print-performance . t)
+         (lsp-restart . 'auto-restart)
+         (lsp-signature-auto-activate . nil)
+         (lsp-eldoc-render-all . nil))
   :hook (lsp-after-open-hook . lsp-enable-imenu))
 
 ;; ref: https://gitlab.com/shackra/emacs/commit/b0df30fe744e4483a08731e6a9f6482ab408124c
@@ -1197,14 +1288,14 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
               (lsp-ui-doc-enable . nil))
   :hook (lsp-mode-hook . lsp-ui-mode))
 
-(leaf company-lsp
-  :straight t
-  :require t
-  :commands company-lsp
-  :setq ((company-lsp-async . t)
-         (company-lsp-cache-candidates . t)
-         (company-lsp-enable-snippet . t))
-  :init (push 'company-lsp company-backends))
+;; (leaf company-lsp
+;;   :straight t
+;;   :require t
+;;   :commands company-lsp
+;;   :setq ((company-lsp-async . t)
+;;          (company-lsp-cache-candidates . t)
+;;          (company-lsp-enable-snippet . t))
+;;   :init (push 'company-lsp company-backends))
 #+end_src
 ** makefile
 #+BEGIN_SRC elisp
@@ -1287,7 +1378,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+BEGIN_SRC elisp
 (leaf polymode
   :straight t
-  :diminish poly-python-sql-mode
+  :diminish
   :setq (polymode-prefix-key . '(kbd "C-c n"))
   :config
   (define-hostmode poly-python-hostmode :mode 'python-mode)
@@ -1361,19 +1452,47 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   (projectile-register-project-type 'python '("pyproject.toml")
                                     :compile ""
                                     :test "")
-  :hook (python-mode-hook . lsp-deferred))
+  :hook (python-mode-hook . lsp))
+
+(leaf python-flymake
+  :setq (python-flymake-command . '("flake8" "-")))
 #+END_SRC
 *** poetry
-#+BEGIN_SRC elisp
+#+BEGIN_SRC elisp :load no
 (leaf poetry
   :straight t
   :require t)
 #+END_SRC
 *** pyenv + virtualenv
 #+BEGIN_SRC elisp
-(leaf auto-virtualenv
+;; (leaf auto-virtualenv
+;;   :straight t
+;;   :hook ((python-mode-hook projectile-after-switch-project-hook) . auto-virtualenv-set-virtualenv))
+
+(leaf auto-virtualenvwrapper
   :straight t
-  :hook ((python-mode-hook projectile-after-switch-project-hook) . auto-virtualenv-set-virtualenv))
+  :require t
+  :config
+
+  (defun in-venv ()
+    (if (or (equal major-mode 'python-mode) (equal major-mode 'projectile-mode))
+        (not (string-match "^\n" (shell-command-to-string "sh -c 'pyenv version-name'")))))
+
+  (defun venv-name ()
+    (interactive)
+    (let* ((venv (s-trim
+                  (shell-command-to-string
+                   "sh -c 'pyenv version-name'"))))
+      (concat
+       (propertize
+        (format "%s" venv)
+        'face (list :foreground "SlateGray4")))))
+
+  (add-to-list 'mode-line-misc-info
+               '(:eval (if (in-venv)
+                           (concat "[" (venv-name) "]"))))
+
+  :hook ((python-mode-hook projectile-after-switch-project-hook) . auto-virtualenvwrapper-activate))
 #+END_SRC
 *** pep8
 #+BEGIN_SRC elisp
@@ -1573,7 +1692,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
       (normal-mode))
     (message "All indented!"))
 
-
   (defun pretty-print-xml-buffer ()
     "pretty print the XML in a buffer."
     (interactive)
@@ -1619,7 +1737,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
              :type git
              :host github
              :repo "hlissner/doom-snippets"
-             :files ("*.el" "snippets"))
+             :files ("*.el" "*"))
   :after yasnippet)
 #+END_SRC
 ** emmet
@@ -1814,6 +1932,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+begin_src elisp
 (leaf mu4e
   :if (executable-find "mu")
+  :require mu4e-contrib
   :bind (("<f1>" . mu4e)
          (mu4e-main-mode-map
           ("j" . conf:mu4e~headers-jump-to-maildir))
@@ -1825,49 +1944,47 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
     (when (> 1 (count-windows))
       (window-configuration-to-register :mu4e-fullscreen)
       (delete-other-windows)))
-  :init
-  (require 'mu4e-contrib)
-  (setq mail-user-agent 'mu4e-user-agent
-        mu4e-attachment-dir  "~/Descargas"
-        mu4e-auto-retrieve-keys t
-        mu4e-compose-context-policy 'ask
-        mu4e-compose-dont-reply-to-self t
-        mu4e-change-filenames-when-moving t
-        mu4e-compose-keep-self-cc nil
-        mu4e-context-policy 'pick-first
-        mu4e-headers-date-format "%Y-%m-%d %H:%M"
-        mu4e-headers-include-related t
-        mu4e-headers-auto-update nil
-        mu4e-headers-leave-behavior 'ignore
-        mu4e-headers-from-or-to-prefix '("" . "➜ ")
-        mu4e-headers-visible-lines 8
-        mu4e-headers-fields '((:human-date    .   10)
-                              (:from          .   30)
-                              (:to            .   30)
-                              (:flags         .   10)
-                              (:maildir       .   30)
-                              (:subject       .   nil))
-        mu4e-view-fields '(:from
-                           :to
-                           :cc
-                           :bcc
-                           :subject
-                           :flags
-                           :date
-                           :maildir
-                           :mailing-list
-                           :tags
-                           :attachments
-                           :signature)
-        mu4e-html2text-command "w3m -dump -T text/html -cols 72 -o display_link_number=true -o auto_image=false -o display_image=true -o ignore_null_img_alt=true"
-        mu4e-maildir (expand-file-name "~/mail")
-        mu4e-view-show-images t
-        mu4e-view-show-addresses t
-        mu4e-view-prefer-html t
-        mu4e-index-update-in-background t
-        mu4e-get-mail-command "offlineimap"
-        mu4e-update-interval 300)
-
+  :pre-setq ((mail-user-agent . 'mu4e-user-agent)
+             (mu4e-attachment-dir .  "~/Descargas")
+             (mu4e-auto-retrieve-keys . t)
+             (mu4e-compose-context-policy . 'ask)
+             (mu4e-compose-dont-reply-to-self . t)
+             (mu4e-change-filenames-when-moving . t)
+             (mu4e-compose-keep-self-cc . nil)
+             (mu4e-context-policy . 'pick-first)
+             (mu4e-headers-date-format . "%Y-%m-%d %H:%M")
+             (mu4e-headers-include-related . t)
+             (mu4e-headers-auto-update . t)
+             (mu4e-headers-leave-behavior . 'ignore)
+             (mu4e-headers-from-or-to-prefix . '("" . "➜ "))
+             (mu4e-headers-visible-lines . 8)
+             (mu4e-headers-fields . '((:human-date    .   10)
+                                      (:from          .   30)
+                                      (:to            .   30)
+                                      (:flags         .   10)
+                                      (:maildir       .   30)
+                                      (:subject       .   nil)))
+             (mu4e-view-fields . '(:from
+                                   :to
+                                   :cc
+                                   :bcc
+                                   :subject
+                                   :flags
+                                   :date
+                                   :maildir
+                                   :mailing-list
+                                   :tags
+                                   :attachments
+                                   :signature))
+             (mu4e-html2text-command . "w3m -dump -T text/html -cols 72 -o display_link_number=true -o auto_image=false -o display_image=true -o ignore_null_img_alt=true")
+             (mu4e-maildir . "~/.mail")
+             (mu4e-view-show-images . t)
+             (mu4e-view-show-addresses . t)
+             (mu4e-view-prefer-html . t)
+             (mu4e-index-update-in-background . t)
+             (mu4e-get-mail-command . "offlineimap")
+             (mu4e-update-interval . 300))
+  :config
   (defun conf:mu4e~headers-jump-to-maildir()
     (interactive)
     (let ((maildir (ivy-read "Maildir: " (mu4e-get-maildirs))))
@@ -1876,17 +1993,10 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   (when (fboundp 'imagemagick-register-types)
     (imagemagick-register-types))
 
-  :config (run-at-time nil (* 60 5) '(lambda ()
-                                       (interactive)
-                                       (mu4e-update-mail-and-index t)))
+  (run-at-time nil (* 60 5) '(lambda ()
+                               (interactive)
+                               (mu4e-update-mail-and-index t)))
   :hook (mu4e-compose-mode-hook . flyspell-mode))
-
-(leaf org-msg
-  :straight t
-  :require t
-  :config
-  (load-user-file "org-msg")
-  (org-msg-mode))
 
 (leaf mu4e-alert
   :if (executable-find "mu")
@@ -1912,21 +2022,11 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :after mu4e
   :setq ((shell-file-name . "/bin/sh")
          (mu4e-maildirs-extension-hide-empty-maildirs . t)
-         (mu4e-maildirs-extension-maildir-separator . "*")
-         (mu4e-maildirs-extension-submaildir-separator . "✉")
          (mu4e-maildirs-extension-action-text . nil)
-         (mu4e-maildirs-extension-title . nil))
+         (mu4e-maildirs-extension-title . nil)
+         (mu4e-maildirs-extension-maildir-collapsed-prefix . "*")
+         (mu4e-maildirs-extension-maildir-default-prefix . "✉"))
   :config (mu4e-maildirs-extension))
-
-(leaf profile
-  :straight (profile
-             :type git
-             :host github
-             :repo "DamienCassou/profile")
-  :bind ("C-c F" . profile-force-profile-in-compose)
-  :after mu4e
-  :init (load-user-file "profile")
-  :hook (mu4e-compose-pre-hook . profile-set-profile-in-compose))
 #+end_src
 *** notmuch
 #+begin_src elisp :load no
@@ -2056,7 +2156,18 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 
     (advice-add #'notmuch-mua-new-reply :filter-args #'my:notmuch-mua-new-reply)
     (add-to-list 'notmuch-hello-sections #'profile-queue-insert-section t))
-#+end_src
+#+end_#+BEGIN_SRC
+
+#+END_SRC
+*** org-msg
+#+BEGIN_SRC elisp
+(leaf org-msg
+  :straight t
+  :require t
+  :config
+  (load-user-file "org-msg")
+  (org-msg-mode))
+#+END_SRC
 *** links
 #+begin_src elisp
 (leaf link-hint
@@ -2064,7 +2175,56 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :bind (("C-c l o" . link-hint-open-link)
          ("C-c l c" . link-hint-copy-link)))
 #+end_src
-** flyspell
+*** shrface
+#+BEGIN_SRC elisp :load no
+(leaf org-bullets
+  :straight t)
+
+(leaf shrface
+  :straight (shrface
+             :type git
+             :host github
+             :repo "chenyanming/shrface")
+  :after shr
+  :require t)
+#+END_SRC
+*** profile
+#+BEGIN_SRC elisp
+(leaf profile
+  :straight (profile
+             :type git
+             :host github
+             :repo "DamienCassou/profile")
+  :bind ("C-c F" . profile-force-profile-in-compose)
+  :after mu4e
+  :init (load-user-file "profile")
+  :hook (mu4e-compose-pre-hook . profile-set-profile-in-compose))
+#+END_SRC
+
+** spelling
+*** spell-fu
+#+BEGIN_SRC elisp :load no
+(leaf spell-fu
+  :straight t
+  :hook (after-init-hook . global-spell-fu-mode))
+
+(setq-default ispell-program-name "hunspell"
+                ispell-really-hunspell t
+                ispell-check-comments t
+                ispell-local-dictionary "en_US"
+                ispell-local-dictionary-alist
+                '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_US") nil utf-8)
+                  ("es_EC" "[[:alpha:]]" "[^[:alpha:]]" "[ñ]" nil ("-d" "es_EC") nil utf-8)))
+
+  (defun switch-dictionary ()
+    (interactive)
+    (let* ((dic ispell-current-dictionary)
+           (change (if (string= dic "en_US") "es_EC" "en_US")))
+      (ispell-change-dictionary change)
+      (setq ispell-alternate-dictionary change)
+      (message "Dictionary switched from %s to %s" dic change)))
+#+END_SRC
+*** flyspell
 #+BEGIN_SRC elisp
 (leaf flyspell
   :require t
@@ -2218,7 +2378,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
         (magit-commit-create)))
     (define-key magit-mode-map "c" 'magit-maybe-commit)
 
-    (setq magit-git-executable "tg"
+    (setq magit-git-executable "git"
           magit-completing-read-function 'ivy-completing-read
           magit-default-tracking-name-function 'magit-default-tracking-name-branch-only
           magit-status-buffer-switch-function 'switch-to-buffer
@@ -2251,6 +2411,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
          ("C-x v s" . git-gutter:stage-hunk)
          ("C-x v r" . git-gutter:revert-hunk)
          ("C-x v SPC" . git-gutter:mark-hunk))
+  :setq ((indicate-empty-lines . nil)
+         (git-gutter:handled-backends . '(git hg bzr svn)))
   :config
   (if (display-graphic-p)
       (leaf git-gutter-fringe
@@ -2263,15 +2425,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
           nil nil '(center repeated))
         (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240]
           nil nil 'bottom)))
-  (global-git-gutter-mode t)
-  (setq indicate-empty-lines nil)
-  (setq git-gutter:handled-backends '(git hg bzr svn)))
-
-;; (leaf diff-hl
-;;   :straight t
-;;   :leaf-defer nil
-;;   :init (global-diff-hl-mode)
-;;   :hook (magit-post-refresh-hook . diff-hl-magit-post-refresh))
+  :hook (after-init-hook . global-git-gutter-mode))
 
 (leaf gitconfig-mode
   :straight t
@@ -2333,8 +2487,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+BEGIN_SRC elisp
 (leaf org
   :straight org-plus-contrib
-  :bind (("C-x a" . org-agenda-list)
-         ("C-x c" . org-capture))
   :diminish org-indent-mode
   :setq `((org-modules . '(ol-bbdb
                            ol-bibtex ol-docview ol-info
@@ -2395,6 +2547,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
     (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
     (setq org-log-done t
           org-clock-idle-time nil
+          org-duration-format (quote h:mm)
           org-todo-keywords (quote
                              ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
                               (sequence "WAITING(w)" "HOLD(h)" "|" "CANCELLED(c)" "PHONE" "MEETING"))))
@@ -2419,10 +2572,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
             ("S" "Stuff TODO" entry (file+olp "~/org/stuff.org" "Tasks") "* TODO %? \n:PROPERTIES:\n:CATEGORY: TASKS\n:CREATED: %U\n:END:")
             ("M" "Stuff Meetings" entry (file+olp "~/org/stuff.org" "Meetings") "* %?\nSCHEDULED: %(org-insert-time-stamp (org-read-date nil t \"+0d\"))\n:PROPERTIES:\n:CATEGORY: MEETINGS\n:CREATED: %U\n:END:")
             ("T" "Stuff Training's" entry (file+olp "~/org/stuff.org" "Training's") "* %?\nSCHEDULED: %(org-insert-time-stamp (org-read-date nil t \"+0d\"))\n:PROPERTIES:\n:CATEGORY: TRAINING'S\n:CREATED: %U\n:END:")))
-
-    ;; configure the external apps to open files
-    (add-to-list (quote org-file-apps)
-                 (quote ("\\.pdf\\'" lambda (file link) (org-pdfview-open link))))
 
     ;; protect hidden trees for being inadvertily edited (do not work with evil)
     (setq-default org-catch-invisible-edits  'error
@@ -2451,11 +2600,14 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 (leaf org-superstar
   :straight t
   :require t
-  :setq (org-superstar-leading-bullet . "  ")
+  :setq ((org-superstar-leading-bullet . "  ")
+         (org-superstar-headline-bullets-list . '("◉")))
   :hook (org-mode-hook . (lambda () (org-superstar-mode 1))))
 
 (leaf org-agenda
   :straight org-plus-contrib
+  :bind (("C-x a" . org-agenda-list)
+         ("C-x c" . org-capture))
   :require t
   :setq ((org-columns-default-format . "%50ITEM(Task) %10CLOCKSUM %16TIMESTAMP_IA")
          (org-agenda-include-diary . nil)
@@ -2475,32 +2627,32 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
                                          ("w" todo "WAITING")
                                          ("d" "Agenda + Next Actions" ((agenda) (todo "NEXT")))))))
 
-;; (leaf doct
-;;   :straight t
-;;   :require t
-;;   :commands (doct)
-;;   :config
-;;   (setq org-capture-templates
-;;       (doct '(("Work" :keys "w"
-;;                :file "~/org/work.org"
-;;                :prepend t
-;;                :template ("* %doct(todo-state) %^{Description}"
-;;                           "SCHEDULED: %(org-insert-time-stamp (org-read-date nil t \"+0d\"))"
-;;                           ":PROPERTIES:"
-;;                           ":CREATED: %U"
-;;                           ":CATEGORY: %doct-keys(headline)%"
-;;                           ":END:"
-;;                           "%?")
-;;                :children (("Task"
-;;                            :keys "t"
-;;                            :headline "Task"
-;;                            :todo-state "TODO")
-;;                           ("Second Child" :keys "2"
-;;                            :headline   "Two"
-;;                            :todo-state "NEXT")
-;;                           ("Third Child"  :keys "3"
-;;                            :headline   "Three"
-;;                            :todo-state "MAYBE")))))))
+(leaf doct
+  :straight t
+  :require t
+  :commands (doct)
+  :config
+  (setq org-capture-templates
+      (doct '(("Work" :keys "w"
+               :file "~/org/work.org"
+               :prepend t
+               :template ("* %{todo-state} %^{Description}"
+                          "SCHEDULED: %(org-insert-time-stamp (org-read-date nil t \"+0d\"))"
+                          ":PROPERTIES:"
+                          ":CREATED: %U"
+                          ":CATEGORY: %{headline}"
+                          ":END:"
+                          "%?")
+               :children (("Task"
+                           :keys "t"
+                           :headline "Task"
+                           :todo-state "TODO")
+                          ("COMMENT Overtime" :keys "o"
+                           :headline   "Two"
+                           :todo-state "NEXT")
+                          ("Third Child"  :keys "3"
+                           :headline   "Three"
+                           :todo-state "MAYBE")))))))
 
 (leaf org-super-agenda
   :straight t
@@ -2651,7 +2803,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
       (when (fboundp 'writegood-mode)
         (setq conf:writegood-mode-state writegood-mode)
         (writegood-mode -1))
-      (flyspell-mode -1)
+      ;; (flyspell-mode -1)
       (conf:org-tree-slide-set-profile)
       (org-toggle-inline-images))
 
@@ -2662,8 +2814,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
                  conf:writegood-mode-state)
         (writegood-mode 1)
         (setq conf:writegood-mode-state nil))
-      (flyspell-mode 1)
-      ;;(hide-mode-line-mode -1)
+      ;; (flyspell-mode 1)
+      ;; (hide-mode-line-mode -1)
       (org-remove-inline-images))
 
     (defun conf:org-tree-slide-text-scale-reset ()
@@ -2743,6 +2895,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 (leaf pdf-tools
   :straight t
   :leaf-defer nil
+  :mode ("\\.[pP][dD][fF]\\'" . pdf-view-mode)
+  :magic ("%PDF" . pdf-view-mode)
   :bind (pdf-view-mode-map
          ("<s-spc>" .  pdf-view-scroll-down-or-next-page)
          ("g"  . pdf-view-first-page)
@@ -2764,31 +2918,50 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
          ("s"  . pdf-occur)
          ("b"  . pdf-view-set-slice-from-bounding-box)
          ("r"  . pdf-view-reset-slice))
-  :init
-  (pdf-tools-install t t)
-  :config
-  (setq pdf-misc-print-programm "/usr/bin/gtklp"
-        pdf-misc-print-programm-args (quote ("-o media=A4" "-o fitplot"))
-        pdf-view-display-size 'fit-page
-        pdf-view-use-imagemagick t
-        pdf-view-midnight-colors '("white smoke" . "gray5")))
+  :init (pdf-tools-install t t)
+  :setq((pdf-misc-print-programm . "/usr/bin/gtklp")
+        (pdf-misc-print-programm-args . (quote ("-o media=A4" "-o fitplot")))
+        (pdf-view-display-size . 'fit-page)
+        (pdf-view-use-imagemagick . t)
+        (pdf-view-midnight-colors . '("white smoke" . "gray5"))))
 
-(leaf org-pdfview
+(leaf org-pdftools
   :straight t
-  :leaf-defer nil
-  :require t)
+  :after (org)
+  :commands org-pdfview-open
+  :setq (org-pdftools-search-string-separator . "??")
+  :config
+  (org-link-set-parameters "pdftools"
+                           :follow #'org-pdftools-open
+                           :complete #'org-pdftools-complete-link
+                           :store #'org-pdftools-store-link
+                           :export #'org-pdftools-export)
+  (delete '("\\.pdf\\'" . default) org-file-apps)
+  ;; org links to pdf files are opened in pdf-view-mode
+  (add-to-list 'org-file-apps '("\\.pdf\\'" . (lambda (_file link) (org-pdftools-open link))))
+  ;; support for links to specific pages
+  (add-to-list 'org-file-apps '("\\.pdf::\\([[:digit:]]+\\)\\'" . (lambda (_file link) (org-pdftools-open link))))
+  :hook (org-store-link-functions . org-pdftools-store-link))
+
+(leaf org-noter-pdftools
+  :straight org-pdftools
+  :after (org-noter))
 #+END_SRC
 ** pkgbuil
-#+BEGIN_SRC elisp
+#+BEGIN_SRC elisp :load no
 (leaf pkgbuild-mode
   :straight t
   :mode "PKGBUILD\\'")
 #+END_SRC
+** ebuild
+#+begin_src elisp
+(leaf ebuild-mode
+  :straight t)
+#+end_src
 ** po-mode
 #+BEGIN_SRC elisp
 (leaf po-mode
   :straight t
-  :mode ("\\.po\\'" . po-mode)
   :commands po-mode
   :config
   ;; Fuente: https://www.emacswiki.org/emacs/PoMode
@@ -2834,6 +3007,13 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
             (ispell-change-dictionary po-language)
             (turn-on-flyspell)
             (flyspell-buffer))))))
+
+(add-hook 'po-subedit-mode-hook
+          (lambda ()
+            (make-local-variable 'split-height-threshold)
+            (make-local-variable 'split-width-threshold)
+            (setq split-height-threshold 1
+                  split-width-threshold nil)))
 #+END_SRC
 ** presentation
 #+BEGIN_SRC elisp
@@ -2853,9 +3033,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :bind ("C-x p" . proced)
   :if (or (string-equal system-type "gnu/linux")
           (string-equal system-type "gnu/kfreebsd"))
-  :init
-  (setq proced-tree-flag t
-        proced-auto-update-flag t))
+  :pre-setq ((proced-tree-flag . t)
+             (proced-auto-update-flag . t)))
 #+END_SRC
 ** restart-emacs
 #+BEGIN_SRC elisp
@@ -2867,7 +3046,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t
   :bind (("C-<f5>" . terminal-here-launch)
          ("C-<f6>" . terminal-here-project-launch))
-  :config (setq terminal-here-terminal-command (list "kitty" "--class=ETmux" "tmx")))
+  :config (setq terminal-here-terminal-command (list "urxvt" "-name" "ETmux" "-e" (concat conf:bin-dir "tmx"))))
 #+END_SRC
 ** ssh
 #+BEGIN_SRC elisp
