@@ -183,32 +183,6 @@
   (when (file-exists-p bookmark-default-file)
     (bookmark-load bookmark-default-file t)))
 #+END_SRC
-** ibuffer
-#+BEGIN_SRC elisp
-(leaf ibuffer
-  :setq ((ibuffer-saved-filter-groups .
-                                      (quote (("default"
-                                               ("org" (name . "^.*org$"))
-
-                                               ("web" (or (mode . web-mode)
-                                                          (mode . php-mode)
-                                                          (mode . js2-mode)))
-                                               ("shell" (or (mode . eshell-mode)
-                                                            (mode . term-mode)
-                                                            (mode . shell-mode)))
-                                               ("prog" (or (mode . python-mode)
-                                                           (mode . nxml-mode)
-                                                           (mode . c++-mode)))
-                                               ("emacs" (or
-                                                         (name . "^\\*scratch\\*$")
-                                                         (name . "^\\*Messages\\*$")))
-                                               ))))
-         (ibuffer-show-empty-filter-groups . nil)
-         (ibuffer-expert . t))
-  :hook (ibuffer-mode-hook . (lambda ()
-                               (ibuffer-auto-mode 1)
-                               (ibuffer-switch-to-saved-filter-groups "default"))))
-#+END_SRC
 ** recentf
 #+BEGIN_SRC elisp
 (leaf recentf
@@ -277,7 +251,7 @@
                                       (projectile-mode 1)
                                       (editorconfig-mode 1)))))
 #+END_SRC
-** load user files
+** load-user-files
 #+begin_src elisp
 (defun load-user-file (file)
   (interactive "f")
@@ -287,7 +261,8 @@
 * UI
 ** all-the-icons
 #+BEGIN_SRC elisp
-(leaf all-the-icons :straight t)
+(leaf all-the-icons
+  :straight t)
 #+END_SRC
 ** avy
 #+BEGIN_SRC elisp
@@ -295,7 +270,75 @@
   :straight t
   :setq (avy-all-windows . t))
 #+END_SRC
-** cursor
+** bufler
+#+begin_src elisp
+(leaf bufler
+  :straight (bufler
+             :type git
+             :host github
+             :repo "alphapapa/bufler.el")
+  :require t
+  :bind ("C-x C-b" . bufler-switch-buffer)
+  :setq (bufler-columns . '("Name" "Path"))
+  :config
+  (bufler-defgroups
+   (group
+    ;; Subgroup collecting all named workspaces.
+    (auto-workspace))
+   (group
+    ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
+    (group-or "*Help/Info*"
+              (mode-match "*Help*" (rx bos "help-"))
+              (mode-match "*Info*" (rx bos "info-"))))
+   (group
+    ;; Subgroup collecting all special buffers (i.e. ones that are not
+    ;; file-backed), except `magit-status-mode' buffers (which are allowed to fall
+    ;; through to other groups, so they end up grouped with their project buffers).
+    (group-and "*Special*"
+               (lambda (buffer)
+                 (unless (or (funcall (mode-match "Magit" (rx bos "magit-status"))
+                                      buffer)
+                             (funcall (mode-match "Dired" (rx bos "dired"))
+                                      buffer)
+                             (funcall (auto-file) buffer))
+                   "*Special*")))
+    (group
+     ;; Subgroup collecting these "special special" buffers
+     ;; separately for convenience.
+     (name-match "**Special**"
+                 (rx bos "*" (or "Messages" "Warnings" "scratch" "Backtrace") "*")))
+    (group
+     ;; Subgroup collecting all other Magit buffers, grouped by directory.
+     (mode-match "*Magit* (non-status)" (rx bos (or "magit" "forge") "-"))
+     (auto-directory))
+    ;; Subgroup for Helm buffers.
+    (mode-match "*Helm*" (rx bos "helm-"))
+    ;; Remaining special buffers are grouped automatically by mode.
+    (auto-mode))
+   ;; All buffers under "~/.emacs.d" (or wherever it is).
+   (dir user-emacs-directory)
+   (group
+    ;; Subgroup collecting buffers in `org-directory' (or "~/org" if
+    ;; `org-directory' is not yet defined).
+    (dir (if (bound-and-true-p org-directory)
+             org-directory
+           "~/org"))
+    (group
+     ;; Subgroup collecting indirect Org buffers, grouping them by file.
+     ;; This is very useful when used with `org-tree-to-indirect-buffer'.
+     (auto-indirect)
+     (auto-file))
+    ;; Group remaining buffers by whether they're file backed, then by mode.
+    (group-not "*special*" (auto-file))
+    (auto-mode))
+   (group
+    ;; Subgroup collecting buffers in a version-control project,
+    ;; grouping them by directory.
+    (auto-project))
+   ;; Group remaining buffers by directory, then major mode.
+   (auto-directory)
+   (auto-mode)))
+#+end_src** cursor
 #+BEGIN_SRC elisp
 (leaf frame
   :setq-default (cursor-type . '(hbar . 2))
@@ -470,18 +513,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 
 (add-hook 'after-init-hook #'global-prettify-symbols-mode)
 #+END_SRC
-** imenu
-#+begin_src elisp :load no
-  (leaf imenu-list
-    :straight t
-    :bind ("M-2" . imenu-list-smart-toggle)
-    :setq-default (imenu-create-index-function . 'semantic-create-imenu-index)
-    :setq ((imenu-list-size . 36)
-           (imenu-list-position . 'left)
-           (imenu-list-focus-after-activation . t)))
-#+end_src
 ** ivy
-#+BEGIN_SRC elisp
+#+BEGIN_SRC elisp :load no
 (leaf ivy
   :straight
   :diminish ivy-mode
@@ -526,25 +559,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :after ivy
   :init (ivy-prescient-mode))
 
-;; (leaf ivy-posframe
-;;   :straight t
-;;   :after ivy
-;;   :diminish ivy-posframe-mode
-;;   :setq ((ivy-posframe-hide-minibuffer . t)
-;;          (ivy-fixed-height-minibuffer . nil)
-;;          (ivy-posframe-parameters . `((min-width . ,(frame-width))
-;;                                       (internal-border-width . 1)))
-;;          (ivy-display-function . #'ivy-posframe-display-at-frame-bottom-left))
-;;   :config (ivy-posframe-mode))
-
-;; (leaf ivy-explorer
-;;   :straight t
-;;   :after (ivy)
-;;   :init
-;;   ;; (if (display-graphic-p)
-;;        ;; (setq ivy-explorer-message-function #'ivy-explorer--posframe))
-;;   (ivy-explorer-mode))
-
 (leaf ivy-xref
   :straight t
   :require t
@@ -581,29 +595,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :setq (ivy-format-function . 'ivy-format-function-line)
   :config (ivy-rich-mode))
 #+END_SRC
-** selectrum
-#+BEGIN_SRC elisp :load no
-(leaf selectrum
-  :straight t
-  :require t
-  :config (selectrum-mode +1))
-
-(leaf selectrum-prescient
-  :straight t
-  :require t
-  :after (selectrum)
-  :config
-  ;; to make sorting and filtering more intelligent
-  (selectrum-prescient-mode +1)
-
-  ;; to save your command history on disk, so the sorting gets more
-  ;; intelligent over time
-  (prescient-persist-mode +1))
-
-(leaf ctrlf
-  :straight t
-  :hook (after-init-hook))
-#+END_SRC
 ** maple
 #+begin_src elisp
 (leaf maple-imenu
@@ -628,71 +619,30 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
              :files ("*.el" "index.html" "static"))
   :commands (maple-preview-mode))
 
-;; (leaf maple-minibuffer
-;;   :straight (maple-minibuffer
-;;              :type git
-;;              :host github
-;;              :repo "honmaple/emacs-maple-minibuffer")
-;;   :require t
-;;   :setq ((maple-minibuffer:height . nil)
-;;          (maple-minibuffer:position-type . 'frame-bottom-left)
-;;          (maple-minibuffer:border-color . "gray50")
-;;          (maple-minibuffer:width . 0.7)
-;;          (maple-minibuffer:cache . nil)
-;;          (maple-minibuffer:action . '(read-from-minibuffer read-string))
-;;          (maple-minibuffer:ignore-action . '(org-schedule org-time-stamp eval-expression))
-;;          (maple-minibuffer:ignore-regexp . '("^anzu-" "^mu4e-" "^yes-" "^save-")))
-;;   :config
-;;   ;; more custom parameters for frame
-;;   (defun maple-minibuffer:parameters ()
-;;     "Maple minibuffer parameters."
-;;     `((height . ,(or maple-minibuffer:height 10))
-;;       (width . ,(or (round (* (frame-width) 0.80)) maple-minibuffer:width))
-;;       (left-fringe . 5)
-;;       (right-fringe . 5)))
-
-;;   :hook (after-init-hook . maple-minibuffer-mode))
-
-;; (leaf maple-scratch
-;;   :straight (maple-scratch
-;;              :type git
-;;              :host github
-;;              :repo "honmaple/emacs-maple-scratch")
-;;   :hook (window-setup-hook . maple-scratch-mode)
-;;   :config
-;;   (setq maple-scratch-source t
-;;         maple-scratch-number 6
-;;         maple-scratch-center t
-;;         maple-scratch-empty t
-;;         maple-scratch-write-mode 'emacs-lisp-mode
-;;         maple-scratch-items '(maple-scratch-banner
-;;                               maple-scratch-navbar
-;;                               maple-scratch-default
-;;                               maple-scratch-startup))
-
-;;   (setq maple-scratch-navbar-alist
-;;         '(("HOME"
-;;            :action (lambda() (find-file (expand-file-name "init.el" user-emacs-directory)))
-;;            :desc "Browse home")
-;;           ("CAPTURE"
-;;            :action 'org-capture
-;;            :desc "Open Org Capture")
-;;           ("AGENDA"
-;;            :action 'org-agenda
-;;            :desc "Open Org Agenda")
-;;           ("HELP"
-;;            :action (lambda() (find-file (expand-file-name "README.org" user-emacs-directory)))
-;;            :desc "Emacs Help"))))
-#+end_src
-** minibuffer
-#+begin_src elisp :load no
-(leaf mini-frame
-  :straight (mini-frame
+(leaf maple-minibuffer
+  :straight (maple-minibuffer
              :type git
              :host github
-             :repo "muffinmad/emacs-mini-frame")
+             :repo "honmaple/emacs-maple-minibuffer")
   :require t
-  :hook (after-init-hook . mini-frame-mode))
+  :setq ((maple-minibuffer:height . nil)
+         (maple-minibuffer:position-type . 'frame-bottom-left)
+         (maple-minibuffer:border-color . "gray50")
+         (maple-minibuffer:width . 0.7)
+         (maple-minibuffer:cache . nil)
+         (maple-minibuffer:action . '(read-from-minibuffer read-string))
+         (maple-minibuffer:ignore-action . '(org-schedule org-time-stamp eval-expression))
+         (maple-minibuffer:ignore-regexp . '("^anzu-" "^mu4e-" "^yes-" "^save-")))
+  :config
+  ;; more custom parameters for frame
+  (defun maple-minibuffer:parameters ()
+    "Maple minibuffer parameters."
+    `((height . ,(or maple-minibuffer:height 10))
+      (width . ,(or (round (* (frame-width) 0.80)) maple-minibuffer:width))
+      (left-fringe . 5)
+      (right-fringe . 5)))
+
+  :hook (after-init-hook))
 #+end_src
 ** modeline
 #+BEGIN_SRC elisp
@@ -805,26 +755,28 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
           (if file-name
               (neotree-find file-name)))))))
 #+END_SRC
-** theme
+** selectrum
 #+BEGIN_SRC elisp
-(leaf vibrant-ink-theme
-  :straight (vibrant-ink-theme
-             :type git
-             :host github
-             :repo "arkhan/vibrant-ink-theme")
-  :init (load-theme 'vibrant-ink t))
-#+END_SRC
-** sublimity
-#+BEGIN_SRC elisp
-(leaf sublimity-scroll
-  :straight sublimity
+(leaf selectrum
+  :straight t
   :require t
-  :setq ((hscroll-margin . 2)
-         (hscroll-step . 1)
-         (scroll-conservatively . 1001)
-         (scroll-margin . 0)
-         (scroll-preserve-screen-position . t))
-  :init (sublimity-mode 1))
+  :config (selectrum-mode +1))
+
+(leaf selectrum-prescient
+  :straight t
+  :require t
+  :after (selectrum)
+  :config
+  ;; to make sorting and filtering more intelligent
+  (selectrum-prescient-mode +1)
+
+  ;; to save your command history on disk, so the sorting gets more
+  ;; intelligent over time
+  (prescient-persist-mode +1))
+
+(leaf ctrlf
+  :straight t
+  :hook (after-init-hook))
 #+END_SRC
 ** shackle
 #+BEGIN_SRC elisp
@@ -857,66 +809,38 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
                             (occur-mode :select nil :align t)
                             (pdf-view-mode :other t)
                             (compilation-mode :select nil))))
-  :hook (emacs-startup-hook . shackle-mode))
-
-;; (leaf hide-mode-line
-;;   :straight t
-;;   :require t)
-;; (leaf doom-popup
-;;   :load-path "~/doom-popup"
-;;   :require t
-;;   :config
-;;   (set-popup-rule! "^ ?\\*NeoTree" :slot 2 :side left :size 20 :select t :quit t)
-;;   (+popup-mode 1))
+  :hook (emacs-startup-hook))
 #+END_SRC
-** popwin
-#+BEGIN_SRC elisp :load no
-(leaf popwin
-  :straight t
+** sublimity
+#+BEGIN_SRC elisp
+(leaf sublimity-scroll
+  :straight sublimity
   :require t
-  :config
-  ;; buffers that we manage
-  (progn
-    (push '("*Help*"                 :dedicated t :position bottom :stick t :noselect nil   :height 0.4) popwin:special-display-config)
-    (push '(po-subedit-mode          :dedicated t :height 0.4) popwin:special-display-config)
-    (push '("*Process List*"         :dedicated t :position bottom :stick t :noselect nil :height 0.4) popwin:special-display-config)
-    (push '("*compilation*"          :dedicated t :position bottom :stick t :noselect t   :height 0.4) popwin:special-display-config)
-    (push '("*Shell Command Output*" :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
-    (push '("*Async Shell Command*"  :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
-    (push '(" *undo-tree*"           :dedicated t :position right  :stick t :noselect nil :width   60) popwin:special-display-config)
-    (push '("*undo-tree Diff*"       :dedicated t :position bottom :stick t :noselect nil :height 0.3) popwin:special-display-config)
-    (push '("*ert*"                  :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
-    (push '("*grep*"                 :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
-    (push '("*nosetests*"            :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
-    (push '("^\*WoMan.+\*$" :regexp t             :position bottom                                   ) popwin:special-display-config)
-    (push '("^\*ivy.+\*$"   :regexp t             :position bottom :stick t               :height 0.3) popwin:special-display-config)
-    (push '("^\*counsel.+\*$"   :regexp t             :position bottom :stick t               :height 0.3) popwin:special-display-config)
-    (push '("*Google Translate*"     :dedicated t :position bottom :stick t :noselect t   :height 0.4) popwin:special-display-config)
-    (push '("*frequencies*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.4) popwin:special-display-config)
-    (push '("*Synonyms List*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.4) popwin:special-display-config)
-    (push '("*Ledger Report*"     :dedicated t :position right :stick t :noselect nil   :width 0.6) popwin:special-display-config)
-    (push '("\*Outline.*\*"     :regexp t :dedicated t :position right :stick t :noselect nil   :width 0.3) popwin:special-display-config)
-    (push '("*PDF-Occur*"     :dedicated t :position right :stick t :noselect nil   :width 0.4) popwin:special-display-config)
-    (push '("^ ?\\*NeoTree" :regexp t :dedicated t :stick t :position left  :width 0.4) popwin:special-display-config)
-    (push '("*WordNut*"     :dedicated t :position right :stick t :noselect nil   :width 0.5) popwin:special-display-config)
-    (push '("*Synonyms List*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.4) popwin:special-display-config)
-    (push '("*Calendar*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.4) popwin:special-display-config)
-    (push '("*Youdao Dictionary*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.25) popwin:special-display-config)
-    (push '("*Anaconda*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.25) popwin:special-display-config)
-    (push '(flycheck-error-list-mode     :dedicated t :position bottom :stick t :noselect nil   :height 0.25) popwin:special-display-config)
-    (push '("*Compile-Log*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.25) popwin:special-display-config)
-    (push '("*Apropos*"     :dedicated t :position bottom :stick t :noselect nil   :height 0.25) popwin:special-display-config)
-    (popwin-mode 1)))
+  :setq ((hscroll-margin . 2)
+         (hscroll-step . 1)
+         (scroll-conservatively . 1001)
+         (scroll-margin . 0)
+         (scroll-preserve-screen-position . t))
+  :init (sublimity-mode 1))
 #+END_SRC
 ** switch-windows
 #+BEGIN_SRC elisp
-  (leaf switch-window
-    :straight t
-    :bind (("C-x o" . switch-window)
-           ("C-x 1" . switch-window-then-maximize)
-           ("C-x 2" . switch-window-then-split-below)
-           ("C-x 3" . switch-window-then-split-right)
-           ("C-x 0" . switch-window-then-delete)))
+(leaf switch-window
+  :straight t
+  :bind (("C-x o" . switch-window)
+         ("C-x 1" . switch-window-then-maximize)
+         ("C-x 2" . switch-window-then-split-below)
+         ("C-x 3" . switch-window-then-split-right)
+         ("C-x 0" . switch-window-then-delete)))
+#+END_SRC
+** theme
+#+BEGIN_SRC elisp
+(leaf vibrant-ink-theme
+  :straight (vibrant-ink-theme
+             :type git
+             :host github
+             :repo "arkhan/vibrant-ink-theme")
+  :init (load-theme 'vibrant-ink t))
 #+END_SRC
 ** zoom
 #+begin_src elisp
@@ -930,75 +854,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
          ("<C-mouse-5>" . zoom-out))
   :setq (zoom-frame/buffer . 'frame))
 #+end_src
-** buffers
-#+begin_src elisp
-(leaf bufler
-  :straight (bufler
-             :type git
-             :host github
-             :repo "alphapapa/bufler.el")
-  :require t
-  :bind ("C-x C-b" . bufler-switch-buffer)
-  :setq (bufler-columns . '("Name" "Path"))
-  :config
-  (bufler-defgroups
-   (group
-    ;; Subgroup collecting all named workspaces.
-    (auto-workspace))
-   (group
-    ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
-    (group-or "*Help/Info*"
-              (mode-match "*Help*" (rx bos "help-"))
-              (mode-match "*Info*" (rx bos "info-"))))
-   (group
-    ;; Subgroup collecting all special buffers (i.e. ones that are not
-    ;; file-backed), except `magit-status-mode' buffers (which are allowed to fall
-    ;; through to other groups, so they end up grouped with their project buffers).
-    (group-and "*Special*"
-               (lambda (buffer)
-                 (unless (or (funcall (mode-match "Magit" (rx bos "magit-status"))
-                                      buffer)
-                             (funcall (mode-match "Dired" (rx bos "dired"))
-                                      buffer)
-                             (funcall (auto-file) buffer))
-                   "*Special*")))
-    (group
-     ;; Subgroup collecting these "special special" buffers
-     ;; separately for convenience.
-     (name-match "**Special**"
-                 (rx bos "*" (or "Messages" "Warnings" "scratch" "Backtrace") "*")))
-    (group
-     ;; Subgroup collecting all other Magit buffers, grouped by directory.
-     (mode-match "*Magit* (non-status)" (rx bos (or "magit" "forge") "-"))
-     (auto-directory))
-    ;; Subgroup for Helm buffers.
-    (mode-match "*Helm*" (rx bos "helm-"))
-    ;; Remaining special buffers are grouped automatically by mode.
-    (auto-mode))
-   ;; All buffers under "~/.emacs.d" (or wherever it is).
-   (dir user-emacs-directory)
-   (group
-    ;; Subgroup collecting buffers in `org-directory' (or "~/org" if
-    ;; `org-directory' is not yet defined).
-    (dir (if (bound-and-true-p org-directory)
-             org-directory
-           "~/org"))
-    (group
-     ;; Subgroup collecting indirect Org buffers, grouping them by file.
-     ;; This is very useful when used with `org-tree-to-indirect-buffer'.
-     (auto-indirect)
-     (auto-file))
-    ;; Group remaining buffers by whether they're file backed, then by mode.
-    (group-not "*special*" (auto-file))
-    (auto-mode))
-   (group
-    ;; Subgroup collecting buffers in a version-control project,
-    ;; grouping them by directory.
-    (auto-project))
-   ;; Group remaining buffers by directory, then major mode.
-   (auto-directory)
-   (auto-mode)))
-#+end_src
+
 * Prog
 ** company
 #+BEGIN_SRC elisp
@@ -1234,7 +1090,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+END_SRC
 ** jinja
 #+BEGIN_SRC elisp
-(leaf jinja2-mode :straight t)
+(leaf jinja2-mode
+  :straight t)
 #+END_SRC
 ** lsp
 #+begin_src elisp
@@ -1287,15 +1144,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
               (lsp-ui-sideline-show-hover . nil)
               (lsp-ui-doc-enable . nil))
   :hook (lsp-mode-hook . lsp-ui-mode))
-
-;; (leaf company-lsp
-;;   :straight t
-;;   :require t
-;;   :commands company-lsp
-;;   :setq ((company-lsp-async . t)
-;;          (company-lsp-cache-candidates . t)
-;;          (company-lsp-enable-snippet . t))
-;;   :init (push 'company-lsp company-backends))
 #+end_src
 ** makefile
 #+BEGIN_SRC elisp
@@ -1335,7 +1183,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 
 (leaf rainbow-delimiters
   :straight t
-  :hook (prog-mode-hook . rainbow-delimiters-mode))
+  :hook (prog-mode-hook))
 #+END_SRC
 ** plantuml
 #+BEGIN_SRC elisp
@@ -1424,14 +1272,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :hook (python-mode-hook . poly-python-sql-mode))
 #+END_SRC
 ** python
-*** lsp-python-ms
-#+begin_src elisp :load no
-(leaf lsp-python-ms
-  :straight t
-  :require t
-  :pre-setq `((lsp-python-ms-dir . ,(expand-file-name "mspyls/" conf:cache-dir))
-              (lsp-python-ms-python-executable-cmd . "python")))
-#+end_src
 *** lsp-python
 #+BEGIN_SRC elisp
 (defun python-template ()
@@ -1457,18 +1297,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 (leaf python-flymake
   :setq (python-flymake-command . '("flake8" "-")))
 #+END_SRC
-*** poetry
-#+BEGIN_SRC elisp :load no
-(leaf poetry
-  :straight t
-  :require t)
-#+END_SRC
 *** pyenv + virtualenv
 #+BEGIN_SRC elisp
-;; (leaf auto-virtualenv
-;;   :straight t
-;;   :hook ((python-mode-hook projectile-after-switch-project-hook) . auto-virtualenv-set-virtualenv))
-
 (leaf auto-virtualenvwrapper
   :straight t
   :require t
@@ -1509,8 +1339,12 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+END_SRC
 *** stuff
 #+BEGIN_SRC elisp
-(leaf pyimport :straight t :require t)
-(leaf pip-requirements :straight t)
+(leaf pyimport
+  :straight t
+  :require t)
+
+(leaf pip-requirements
+  :straight t)
 #+END_SRC
 ** rainbow
 #+BEGIN_SRC elisp
@@ -1699,7 +1533,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+END_SRC
 ** yaml
 #+BEGIN_SRC elisp
-(leaf yaml-mode :straight t)
+(leaf yaml-mode
+  :straight t)
 #+END_SRC
 ** yasnippet
 #+BEGIN_SRC elisp
@@ -1740,12 +1575,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
              :files ("*.el" "*"))
   :after yasnippet)
 #+END_SRC
-** emmet
-#+begin_src elisp
-(leaf emmet-mode
-  :straight t
-  :hook (sgml-mode-hook web-mode-hook css-mode-hook mhtml-mode-hook))
-#+end_src
 * Tools
 ** alert
 #+BEGIN_SRC elisp
@@ -1763,6 +1592,13 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t
   :bind (("M-%" . anzu-query-replace)
 	     ("C-M-%" . anzu-query-replace-regexp))
+  :setq ((anzu-cons-mode-line-p . nil)
+	     (anzu-mode-lighter . "")
+	     (anzu-deactivate-region . t)
+	     (anzu-search-threshold . 1000)
+	     (anzu-replace-threshold . 50)
+	     (anzu-replace-to-string-separator . " => ")
+	     (anzu-mode-line-update-function . 'cfg:anzu-update-func))
   :config
   (set-face-attribute 'anzu-mode-line nil :foreground "yellow" :weight 'bold)
 
@@ -1773,14 +1609,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 			          (replace-query (format "(%d Replaces)" total))
 			          (replace (format "[%d/%d Replaces]" here total)))))
 	    (propertize status 'face 'anzu-mode-line))))
-
-  (setq anzu-cons-mode-line-p nil
-	    anzu-mode-lighter ""
-	    anzu-deactivate-region t
-	    anzu-search-threshold 1000
-	    anzu-replace-threshold 50
-	    anzu-replace-to-string-separator " => "
-	    anzu-mode-line-update-function #'cfg:anzu-update-func)
 
   (add-to-list 'minor-mode-alist
 		       '(:eval (when anzu--state
@@ -1808,58 +1636,52 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+BEGIN_SRC elisp
 (leaf autorever
   :diminish auto-revert-mode
-  :config (setq auto-revert-remote-files t
-                auto-revert-interval 1))
+  :setq ((auto-revert-remote-files . t)
+         (auto-revert-interval . 1)))
 #+END_SRC
 ** caldav
 #+BEGIN_SRC elisp
 (leaf org-caldav
   :straight t
   :bind ("<f6>" . org-caldav-sync)
-  :config
-  (setq org-icalendar-alarm-time 30
-        org-icalendar-categories '(all-tags category todo-state)
-        org-icalendar-include-todo t
-        org-icalendar-use-deadline '(event-if-todo event-if-not-todo todo-due)
-        org-icalendar-use-scheduled '(event-if-todo event-if-not-todo todo-start)
-        org-icalendar-with-timestamps t
-        org-icalender-sync-todo t
-        org-icalendar-timezone "America/Guayaquil")
-
-  (setq org-caldav-calendars '((:calendar-id "arkhan/work"
-                                             :files ("~/org/work.org")
-                                             :inbox "~/org/inbox.org")
-                               (:calendar-id "arkhan/stuff"
-                                             :files ("~/org/stuff.org")
-                                             :inbox "~/org/inbox.org"))
-        org-caldav-files org-agenda-files
-        org-caldav-save-directory (concat conf:cache-dir "dav")
-        org-caldav-show-sync-results nil
-        org-caldav-url "https://cloud.disroot.org/remote.php/dav/calendars")
-  (make-directory org-caldav-save-directory :parents)
-  (setq org-caldav-backup-file (concat org-caldav-save-directory "caldav-backup.org")))
+  :setq `((org-icalendar-alarm-time . 30)
+          (org-icalendar-categories . '(all-tags category todo-state))
+          (org-icalendar-include-todo . t)
+          (org-icalendar-use-deadline . '(event-if-todo event-if-not-todo todo-due))
+          (org-icalendar-use-scheduled . '(event-if-todo event-if-not-todo todo-start))
+          (org-icalendar-with-timestamps . t)
+          (org-icalender-sync-todo . t)
+          (org-icalendar-timezone . "America/Guayaquil")
+          (org-caldav-calendars . '((:calendar-id "arkhan/work"
+                                                  :files ("~/org/work.org")
+                                                  :inbox "~/org/inbox.org")
+                                    (:calendar-id "arkhan/stuff"
+                                                  :files ("~/org/stuff.org")
+                                                  :inbox "~/org/inbox.org")))
+          (org-caldav-files . org-agenda-files)
+          (org-caldav-show-sync-results . nil)
+          (org-caldav-url . "https://cloud.disroot.org/remote.php/dav/calendars")
+          (org-caldav-backup-file . ,(concat conf:cache-dir "caldav-backup.org"))))
 
 
 (leaf calfw
   :straight t
-  :config
-  (setq cfw:display-calendar-holidays nil
-        calendar-week-start-day 1
-        cfw:fchar-junction ?╬
-        cfw:fchar-vertical-line ?║
-        cfw:fchar-horizontal-line ?═
-        cfw:fchar-left-junction ?╠
-        cfw:fchar-right-junction ?╣
-        cfw:fchar-top-junction ?╦
-        cfw:fchar-top-left-corner ?╔
-        cfw:fchar-top-right-corner ?╗))
+  :setq ((cfw:display-calendar-holidays . nil)
+         (calendar-week-start-day . 1)
+         (cfw:fchar-junction . ?╬)
+         (cfw:fchar-vertical-line . ?║)
+         (cfw:fchar-horizontal-line . ?═)
+         (cfw:fchar-left-junction . ?╠)
+         (cfw:fchar-right-junction . ?╣)
+         (cfw:fchar-top-junction . ?╦)
+         (cfw:fchar-top-left-corner . ?╔)
+         (cfw:fchar-top-right-corner . ?╗)))
 
 (leaf calfw-org
   :straight t
   :bind ("C-c f" . cfw:open-org-calendar)
   :require t
-  :config
-  (setq cfw:org-overwrite-default-keybinding t))
+  :setq (cfw:org-overwrite-default-keybinding . t))
 #+END_SRC
 ** comment-dwim-2
 #+begin_src elisp
@@ -1895,7 +1717,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
          ("M-g i" . dumb-jump-go-prompt)
          ("M-g x" . dumb-jump-go-prefer-external)
          ("M-g z" . dumb-jump-go-prefer-external-other-window))
-  :config (setq dumb-jump-selector 'ivy))
+  :setq (dumb-jump-selector 'completing-read))
 #+END_SRC
 ** email
 *** message
@@ -2237,22 +2059,16 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
           ("\M-\t" . nil)
           ([down-mouse-2] . nil)
           ([mouse-2] . nil)))
-  :init
-  (dolist (hook '(TeX-mode-hook LaTeX-mode-hook text-mode-hook message-mode-hook markdown-mode-hook org-mode-hook))
-    (add-hook hook 'turn-on-flyspell))
+  :setq-default ((ispell-program-name . "hunspell")
+                 (ispell-really-hunspell . t)
+                 (ispell-check-comments . t)
+                 (ispell-local-dictionary . "en_US")
+                 (ispell-local-dictionary-alist . '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_US") nil utf-8)
+                                                    ("es_EC" "[[:alpha:]]" "[^[:alpha:]]" "[ñ]" nil ("-d" "es_EC") nil utf-8))))
+  :setq ((flyspell-use-meta-tab . nil)
+         (flyspell-issue-welcome-flag . nil)
+         (flyspell-issue-message-flag . nil))
   :config
-  (setq flyspell-use-meta-tab nil
-        flyspell-issue-welcome-flag nil
-        flyspell-issue-message-flag nil)
-
-  (setq-default ispell-program-name "hunspell"
-                ispell-really-hunspell t
-                ispell-check-comments t
-                ispell-local-dictionary "en_US"
-                ispell-local-dictionary-alist
-                '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_US") nil utf-8)
-                  ("es_EC" "[[:alpha:]]" "[^[:alpha:]]" "[ñ]" nil ("-d" "es_EC") nil utf-8)))
-
   (defun switch-dictionary ()
     (interactive)
     (let* ((dic ispell-current-dictionary)
@@ -2281,6 +2097,9 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
             (flyspell-do-correct 'save nil word cursor-location start end opoint)))
       (ispell-pdict-save t)))
 
+  (dolist (hook '(TeX-mode-hook LaTeX-mode-hook text-mode-hook message-mode-hook markdown-mode-hook org-mode-hook))
+    (add-hook hook 'turn-on-flyspell))
+
   :hook (prog-mode-hook . flyspell-prog-mode))
 
 (leaf frog-menu
@@ -2290,6 +2109,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 (leaf flyspell-correct
   :straight t
   :bind ("C-M-'" . flyspell-correct-at-point)
+  :setq ((flyspell-correct-interface . #'frog-menu-flyspell-correct)
+         (flyspell-correct-auto-mode-interface . #'frog-menu-flyspell-correct))
   :config
   (defun frog-menu-flyspell-correct (candidates word)
     "Run `frog-menu-read' for the given CANDIDATES.
@@ -2309,16 +2130,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
            (res      (frog-menu-read prompt corrects actions)))
       (unless res
         (error "Quit"))
-      res))
-
-  (setq flyspell-correct-interface #'frog-menu-flyspell-correct
-        flyspell-correct-auto-mode-interface #'frog-menu-flyspell-correct))
-#+END_SRC
-** frog
-#+BEGIN_SRC elisp :load no
-(leaf frog-jump-buffer
-  :straight t
-  :bind ("C-x C-b" . frog-jump-buffer))
+      res)))
 #+END_SRC
 ** gif-screencast
 #+BEGIN_SRC elisp
