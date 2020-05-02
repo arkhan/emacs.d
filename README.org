@@ -70,20 +70,20 @@
 #+begin_src elisp
 (straight-use-package 'leaf)
 (straight-use-package 'leaf-keywords)
-(straight-use-package 'diminish)
-(require 'diminish)
 
 (leaf leaf
   :require t
   :init
   (leaf leaf-keywords
-    :emacs> 24.4
-    :require t
-    :init
-    (leaf-keywords-init)))
+	:emacs> 24.4
+	:require t
+    ;; :setq (leaf-defaults . '(:straight t))
+	:init
+	(leaf-keywords-init)))
 
-(leaf leaf-convert
-  :straight t)
+(leaf diminish
+  :straight t
+  :require t)
 
 (leaf async
   :straight t
@@ -111,7 +111,7 @@
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
 (setq-default buffer-file-coding-system 'utf-8-auto-unix
-		      x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
+			  x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
 
 (setq auto-save-default nil
 	  auto-save-list-file-prefix nil
@@ -123,8 +123,8 @@
                                         ;current-language-environment "Spanish")
 
 (setq-default indent-tabs-mode nil
-		      tab-width 4
-		      frame-title-format (list (user-login-name) "@" (system-name) " %b [%m]"))
+			  tab-width 4
+			  frame-title-format (list (user-login-name) "@" (system-name) " %b [%m]"))
 
 (global-set-key (kbd "RET") 'newline-and-indent)
 (global-set-key (kbd "<f5>") 'revert-buffer)
@@ -161,6 +161,7 @@
 ** abbrev
 #+BEGIN_SRC elisp
 (leaf abbrev
+  ;; :straight nil
   :diminish abbrev-mode
   :pre-setq `((abbrev-file-name . ,(concat conf:cache-dir "abbrev.el"))
               (save-abbrevs . 'silently)
@@ -178,6 +179,7 @@
 ** bookmarks
 #+BEGIN_SRC elisp
 (leaf bookmark
+  ;; :straight nil
   :pre-setq `(bookmark-default-file . ,(concat conf:cache-dir "bookmarks"))
   :config
   (when (file-exists-p bookmark-default-file)
@@ -186,6 +188,7 @@
 ** recentf
 #+BEGIN_SRC elisp
 (leaf recentf
+  ;; :straight nil
   :pre-setq `((recentf-save-file . ,(concat conf:cache-dir "recentf"))
               (recentf-exclude . '("/tmp/" "/ssh:" "/sudo:" "/scp:"
                                    "/scpx:" "/ssh:" "/media/data/org/"
@@ -200,6 +203,7 @@
 ** saveplace
 #+BEGIN_SRC elisp
 (leaf saveplace
+  ;; :straight nil
   :pre-setq `(save-place-file . ,(concat conf:cache-dir "saveplace.el"))
   :setq-default (save-place . t)
   :init (save-place-mode))
@@ -207,6 +211,7 @@
 ** semantic
 #+BEGIN_SRC elisp
 (leaf semantic
+  ;; :straight nil
   :leaf-defer nil
   :require t
   :setq `(semanticdb-default-save-directory . ,(concat conf:cache-dir "semanticdb/"))
@@ -273,10 +278,7 @@
 ** bufler
 #+begin_src elisp
 (leaf bufler
-  :straight (bufler
-             :type git
-             :host github
-             :repo "alphapapa/bufler.el")
+  :straight t
   :require t
   :bind ("C-x C-b" . bufler-switch-buffer)
   :setq (bufler-columns . '("Name" "Path"))
@@ -338,9 +340,11 @@
    ;; Group remaining buffers by directory, then major mode.
    (auto-directory)
    (auto-mode)))
-#+end_src** cursor
+#+end_src
+** cursor
 #+BEGIN_SRC elisp
 (leaf frame
+  ;; :straight nil
   :setq-default (cursor-type . '(hbar . 2))
   :setq (x-stretch-cursor . t)
   :config
@@ -395,10 +399,15 @@
 *** config
 #+BEGIN_SRC elisp
 (leaf emacs
+  ;; :straight nil
   :config
-  (setq conf:font-family "PragmataPro Mono Liga"
-        conf:font-name "PragmataPro Mono Liga"
-        conf:font-size 13.5
+  ;; (setq conf:font-family "PragmataPro Mono Liga"
+  ;;       conf:font-name "PragmataPro Mono Liga"
+  ;;       conf:font-size 13.5
+  ;;       inhibit-compacting-font-caches t)
+  (setq conf:font-family "Cascadia Code PL"
+        conf:font-name "Cascadia Code PL"
+        conf:font-size 12
         inhibit-compacting-font-caches t)
 
   (defun fc-list ()
@@ -412,7 +421,7 @@
   (defun font-exists-p (font)
     "Comprueba si una tipografía FONT existe.
 
-Código parcialmente sacado de https://redd.it/1xe7vr"
+    Código parcialmente sacado de https://redd.it/1xe7vr"
     (let ((font-list (or (font-family-list) (fc-list))))
       (if (member font font-list)
           t
@@ -440,6 +449,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 *** pretty
 #+BEGIN_SRC elisp
 (leaf composite
+  ;; :straight nil
   :leaf-defer nil
   :emacs>="27.0"
   :config
@@ -514,9 +524,9 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 (add-hook 'after-init-hook #'global-prettify-symbols-mode)
 #+END_SRC
 ** ivy
-#+BEGIN_SRC elisp :load no
+#+BEGIN_SRC elisp
 (leaf ivy
-  :straight
+  :straight t
   :diminish ivy-mode
   :bind (ivy-mode-map
          ("C-'" . ivy-avy))
@@ -611,38 +621,38 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :hook (mode-hook . (lambda ()
                        (setq imenu-create-index-function 'semantic-create-imenu-index))))
 
-(leaf maple-preview
-  :straight (maple-preview
-             :type git
-             :host github
-             :repo "honmaple/emacs-maple-preview"
-             :files ("*.el" "index.html" "static"))
-  :commands (maple-preview-mode))
+;; (leaf maple-preview
+;;   :straight (maple-preview
+;;              :type git
+;;              :host github
+;;              :repo "honmaple/emacs-maple-preview"
+;;              :files ("*.el" "index.html" "static"))
+;;   :commands (maple-preview-mode))
 
-(leaf maple-minibuffer
-  :straight (maple-minibuffer
-             :type git
-             :host github
-             :repo "honmaple/emacs-maple-minibuffer")
-  :require t
-  :setq ((maple-minibuffer:height . nil)
-         (maple-minibuffer:position-type . 'frame-bottom-left)
-         (maple-minibuffer:border-color . "gray50")
-         (maple-minibuffer:width . 0.7)
-         (maple-minibuffer:cache . nil)
-         (maple-minibuffer:action . '(read-from-minibuffer read-string))
-         (maple-minibuffer:ignore-action . '(org-schedule org-time-stamp eval-expression))
-         (maple-minibuffer:ignore-regexp . '("^anzu-" "^mu4e-" "^yes-" "^save-")))
-  :config
-  ;; more custom parameters for frame
-  (defun maple-minibuffer:parameters ()
-    "Maple minibuffer parameters."
-    `((height . ,(or maple-minibuffer:height 10))
-      (width . ,(or (round (* (frame-width) 0.80)) maple-minibuffer:width))
-      (left-fringe . 5)
-      (right-fringe . 5)))
+;; (leaf maple-minibuffer
+;;   :straight (maple-minibuffer
+;;              :type git
+;;              :host github
+;;              :repo "honmaple/emacs-maple-minibuffer")
+;;   :require t
+;;   :setq ((maple-minibuffer:height . nil)
+;;          (maple-minibuffer:position-type . 'frame-bottom-left)
+;;          (maple-minibuffer:border-color . "gray50")
+;;          (maple-minibuffer:width . 0.7)
+;;          (maple-minibuffer:cache . nil)
+;;          (maple-minibuffer:action . '(read-from-minibuffer read-string))
+;;          (maple-minibuffer:ignore-action . '(org-schedule org-time-stamp eval-expression))
+;;          (maple-minibuffer:ignore-regexp . '("^anzu-" "^mu4e-" "^yes-" "^save-")))
+;;   :config
+;;   ;; more custom parameters for frame
+;;   (defun maple-minibuffer:parameters ()
+;;     "Maple minibuffer parameters."
+;;     `((height . ,(or maple-minibuffer:height 10))
+;;       (width . ,(or (round (* (frame-width) 0.80)) maple-minibuffer:width))
+;;       (left-fringe . 5)
+;;       (right-fringe . 5)))
 
-  :hook (after-init-hook))
+;;   :hook (after-init-hook))
 #+end_src
 ** modeline
 #+BEGIN_SRC elisp
@@ -756,11 +766,18 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
               (neotree-find file-name)))))))
 #+END_SRC
 ** selectrum
-#+BEGIN_SRC elisp
+#+BEGIN_SRC elisp :load no
+(leaf orderless
+  :straight t
+  :require t
+  :custom (completion-styles '(orderless)))
+
 (leaf selectrum
   :straight t
   :require t
-  :config (selectrum-mode +1))
+  :setq ((selectrum-refine-candidates-function . 'orderless-filter)
+         (selectrum-highlight-candidates-function . 'orderless-highlight-matches))
+  :hook (emacs-startup-hook))
 
 (leaf selectrum-prescient
   :straight t
@@ -854,7 +871,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
          ("<C-mouse-5>" . zoom-out))
   :setq (zoom-frame/buffer . 'frame))
 #+end_src
-
 * Prog
 ** company
 #+BEGIN_SRC elisp
@@ -880,6 +896,12 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
                                 company-echo-metadata-frontend)))
 
   :config (global-company-mode +1))
+
+(leaf company-dict
+  :straight t
+  :require t
+  :setq `(company-dict-dir . ,(concat conf:cache-dir "dict/"))
+  :config (add-to-list 'company-backends 'company-dict))
 
 (leaf company-prescient
   :straight t
@@ -997,11 +1019,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :diminish editorconfig-mode
   :config (editorconfig-mode))
 #+END_SRC
-** eldoc
-#+BEGIN_SRC elisp
-(leaf eldoc
-  :diminish eldoc-mode)
-#+END_SRC
 ** empty buffer
 #+BEGIN_SRC elisp
 (defun empty-buffer? ()
@@ -1108,7 +1125,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
          (lsp-idle-delay . 0.500)
          (lsp-inhibit-message . t)
          (lsp-message-project-root-warning . t)
-         (lsp-prefer-capf . t)
+         (lsp-prefer-capf . nil)
          (lsp-prefer-flymake . nil)
          (lsp-print-io . nil)
          (lsp-print-performance . t)
@@ -1144,6 +1161,15 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
               (lsp-ui-sideline-show-hover . nil)
               (lsp-ui-doc-enable . nil))
   :hook (lsp-mode-hook . lsp-ui-mode))
+
+(leaf company-lsp
+  :straight t
+  :require t
+  :commands company-lsp
+  :setq ((company-lsp-async . t)
+         (company-lsp-cache-candidates . t)
+         (company-lsp-enable-snippet . t))
+  :init (push 'company-lsp company-backends))
 #+end_src
 ** makefile
 #+BEGIN_SRC elisp
@@ -1226,7 +1252,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+BEGIN_SRC elisp
 (leaf polymode
   :straight t
-  :diminish
   :setq (polymode-prefix-key . '(kbd "C-c n"))
   :config
   (define-hostmode poly-python-hostmode :mode 'python-mode)
@@ -1293,9 +1318,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
                                     :compile ""
                                     :test "")
   :hook (python-mode-hook . lsp))
-
-(leaf python-flymake
-  :setq (python-flymake-command . '("flake8" "-")))
 #+END_SRC
 *** pyenv + virtualenv
 #+BEGIN_SRC elisp
@@ -1303,7 +1325,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t
   :require t
   :config
-
   (defun in-venv ()
     (if (or (equal major-mode 'python-mode) (equal major-mode 'projectile-mode))
         (not (string-match "^\n" (shell-command-to-string "sh -c 'pyenv version-name'")))))
@@ -1475,6 +1496,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 ** xml
 #+BEGIN_SRC elisp
 (leaf nxml-mode
+  ;; :straight nil
   :mode (("\\.plist\\'" . nxml-mode)
          ("\\.rss\\'"   . nxml-mode)
          ("\\.svg\\'"   . nxml-mode)
@@ -1532,10 +1554,10 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
     (pretty-print-xml-region (point-min) (point-max))))
 #+END_SRC
 ** yaml
-#+BEGIN_SRC elisp
+#+begin_src elisp
 (leaf yaml-mode
   :straight t)
-#+END_SRC
+#+end_src
 ** yasnippet
 #+BEGIN_SRC elisp
 (leaf yasnippet
@@ -1615,12 +1637,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 			             (concat " " (anzu--update-mode-line)))))
   (global-anzu-mode +1))
 #+END_SRC
-** broadcast
-#+begin_src elisp
-(leaf broadcast
-  :straight t
-  :commands broadcast-mode)
-#+end_src
 ** bughunter
 #+BEGIN_SRC elisp
 (leaf bug-hunter
@@ -1635,6 +1651,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 ** autorevert
 #+BEGIN_SRC elisp
 (leaf autorever
+  ;; :straight nil
   :diminish auto-revert-mode
   :setq ((auto-revert-remote-files . t)
          (auto-revert-interval . 1)))
@@ -1679,8 +1696,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 
 (leaf calfw-org
   :straight t
-  :bind ("C-c f" . cfw:open-org-calendar)
   :require t
+  :bind ("C-c f" . cfw:open-org-calendar)
   :setq (cfw:org-overwrite-default-keybinding . t))
 #+END_SRC
 ** comment-dwim-2
@@ -1689,12 +1706,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t
   :leaf-defer nil
   :bind* ("M-;" . comment-dwim-2))
-#+end_src
-** demo-it
-#+begin_src elisp
-(leaf demo-it
-  :straight t
-  :require t)
 #+end_src
 ** docker
 #+begin_src elisp
@@ -1723,6 +1734,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 *** message
 #+begin_src elisp
 (leaf message
+  ;; :straight nil
   :setq ((message-citation-line-format . "\nEl %A %d de %B del %Y a las %H%M horas, %N escribió:\n")
          (message-citation-line-function . 'message-insert-formatted-citation-line)
          (message-cite-reply-position . 'below)
@@ -1754,6 +1766,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+begin_src elisp
 (leaf mu4e
   :if (executable-find "mu")
+  ;; :straight nil
   :require mu4e-contrib
   :bind (("<f1>" . mu4e)
          (mu4e-main-mode-map
@@ -1766,6 +1779,12 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
     (when (> 1 (count-windows))
       (window-configuration-to-register :mu4e-fullscreen)
       (delete-other-windows)))
+
+  (defadvice mu4e-quit (after mu4e-close-and-push activate)
+    "Despues de salir de mu4e ejecutamos un script para subir los cambios al buzon de correo y para también restaurar la disposición de ventanas"
+    (start-process "pushmail" "*pushmail-offlineimap*" "offlineimap")
+    (when (get-register :mu4e-fullscreen)
+      (jump-to-register :mu4e-fullscreen)))
   :pre-setq ((mail-user-agent . 'mu4e-user-agent)
              (mu4e-attachment-dir .  "~/Descargas")
              (mu4e-auto-retrieve-keys . t)
@@ -1835,8 +1854,8 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
     (mu4e-alert-enable-mode-line-display))
   (run-with-timer 0 60 'conf:refresh-mu4e-alert-mode-line)
   (mu4e-alert-set-default-style 'libnotify)
-  :hook ((after-init-hook . mu4e-alert-enable-notifications)
-         (after-init-hook . mu4e-alert-enable-mode-line-display)))
+  :hook ((emacs-startup-hook . mu4e-alert-enable-notifications)
+         (emacs-startup-hook . mu4e-alert-enable-mode-line-display)))
 
 (leaf mu4e-maildirs-extension
   :if (executable-find "mu")
@@ -2002,13 +2021,19 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 (leaf org-bullets
   :straight t)
 
+(leaf pcre2el
+  :straight t)
+
 (leaf shrface
   :straight (shrface
              :type git
              :host github
              :repo "chenyanming/shrface")
   :after shr
-  :require t)
+  :require t
+  :config
+  (with-eval-after-load 'mu4e
+    (add-hook 'mu4e-view-mode-hook 'shrface-mode)))
 #+END_SRC
 *** profile
 #+BEGIN_SRC elisp
@@ -2022,7 +2047,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :init (load-user-file "profile")
   :hook (mu4e-compose-pre-hook . profile-set-profile-in-compose))
 #+END_SRC
-
 ** spelling
 *** spell-fu
 #+BEGIN_SRC elisp :load no
@@ -2264,20 +2288,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :bind (git-timemachine-mode
          ("c" . git-timemachine-show-current-revision)
          ("b" . git-timemachine-switch-branch)))
-#+END_SRC
-** i3wm
-#+BEGIN_SRC elisp
-(leaf i3wm-config-mode
-  :straight (i3wm-config-mode
-             :type git
-             :host github
-             :repo "Alexander-Miller/i3wm-Config-Mode"))
-#+END_SRC
-** logview
-#+BEGIN_SRC elisp
-(leaf logview
-  :straight t
-  :hook (logview-mode-hook . auto-revert-mode))
 #+END_SRC
 ** mingus
 #+begin_src elisp
@@ -2690,6 +2700,7 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :config (advice-add #'pass-insert-generated :override #'my/pass-insert-generated))
 
 (leaf auth-source
+  ;; :straight nil
   :setq ((auth-source-debug . t)
          (auth-source-do-cache . nil)))
 
@@ -2698,9 +2709,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :require t
   :after auth-source
   :setq (auth-sources . '(password-store)))
-
-(leaf ivy-pass
-  :straight t)
 #+END_SRC
 ** pdf-tools
 #+BEGIN_SRC elisp
@@ -2730,12 +2738,12 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
          ("s"  . pdf-occur)
          ("b"  . pdf-view-set-slice-from-bounding-box)
          ("r"  . pdf-view-reset-slice))
-  :init (pdf-tools-install t t)
   :setq((pdf-misc-print-programm . "/usr/bin/gtklp")
         (pdf-misc-print-programm-args . (quote ("-o media=A4" "-o fitplot")))
         (pdf-view-display-size . 'fit-page)
         (pdf-view-use-imagemagick . t)
-        (pdf-view-midnight-colors . '("white smoke" . "gray5"))))
+        (pdf-view-midnight-colors . '("white smoke" . "gray5")))
+    :config (pdf-loader-install t t))
 
 (leaf org-pdftools
   :straight t
@@ -2762,7 +2770,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 ** pkgbuil
 #+BEGIN_SRC elisp :load no
 (leaf pkgbuild-mode
-  :straight t
   :mode "PKGBUILD\\'")
 #+END_SRC
 ** ebuild
@@ -2862,12 +2869,11 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
 #+END_SRC
 ** ssh
 #+BEGIN_SRC elisp
-(leaf ssh
-  :straight t
-  :hook (ssh-mode-hook . (lambda ()
-                           (setq ssh-directory-tracking-mode t)
-                           (shell-dirtrack-mode t)
-                           (setq dirtrackp nil))))
+;; (leaf ssh
+;;   :hook (ssh-mode-hook . (lambda ()
+;;                            (setq ssh-directory-tracking-mode t)
+;;                            (shell-dirtrack-mode t)
+;;                            (setq dirtrackp nil))))
 (leaf ssh-config-mode
   :straight t
   :mode (("/\\.ssh/config\\'" . ssh-config-mode)
@@ -2882,20 +2888,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :straight t)
 #+END_SRC
 ** undo
-#+begin_src elisp :load no
-(leaf undo-tree
-  :straight (undo-tree
-             :type git
-             :host github
-             :repo "emacsorphanage/undo-tree")
-  :require t
-  :setq ((undo-tree-history-directory-alist . '(("." . "~/.emacs.d/cache/undo")))
-         (undo-tree-auto-save-history . t)
-         (undo-tree-visualizer-diff . t))
-  :config
-  (defalias 'redo 'undo-tree-redo)
-  (global-undo-tree-mode 1))
-#+end_src
 #+begin_src elisp
 (leaf undo-fu-session
   :straight t
@@ -2923,12 +2915,6 @@ Código parcialmente sacado de https://redd.it/1xe7vr"
   :diminish which-key-mode
   :setq (which-key-sort-order . 'which-key-key-order-alpha)
   :hook (emacs-startup-hook . which-key-mode))
-
-;; (leaf which-key-posframe
-;;   :straight t
-;;   :setq ((which-key-posframe-poshandler . 'posframe-poshandler-frame-bottom-left-corner)
-;;          (which-key-posframe-border-width . 1))
-;;   :init (which-key-posframe-mode))
 #+END_SRC
 ** xonsh
 #+BEGIN_SRC elisp
