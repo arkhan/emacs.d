@@ -162,12 +162,11 @@
 #+BEGIN_SRC elisp
 (leaf abbrev
   ;; :straight nil
-  :diminish abbrev-mode
   :pre-setq `((abbrev-file-name . ,(concat conf:cache-dir "abbrev.el"))
               (save-abbrevs . 'silently)
               (default-abbrev-mode . t)
               (save-abbrevs . t))
-  :config
+  :init
   (unless (file-exists-p abbrev-file-name)
     (with-temp-buffer
       (write-file abbrev-file-name)))
@@ -181,6 +180,7 @@
 (leaf bookmark
   ;; :straight nil
   :pre-setq `(bookmark-default-file . ,(concat conf:cache-dir "bookmarks"))
+  :setq (bookmark-save-flag . 1)
   :config
   (when (file-exists-p bookmark-default-file)
     (bookmark-load bookmark-default-file t)))
@@ -190,9 +190,10 @@
 (leaf recentf
   ;; :straight nil
   :pre-setq `((recentf-save-file . ,(concat conf:cache-dir "recentf"))
-              (recentf-exclude . '("/tmp/" "/ssh:" "/sudo:" "/scp:"
-                                   "/scpx:" "/ssh:" "/media/data/org/"
-                                   "/home/arkhan/.emacs.d/cache/" "/media/data/Mail/Maildir/"
+              (recentf-exclude . '("/tmp/" "/ssh:" "/sudo:" "/su:"
+                                   "/scp:" "/root" "/scpx:" "/sshx:"
+                                   "/media/data/org/" "/home/arkhan/.emacs.d/cache/"
+                                   "/media/data/Mail/Maildir/"
                                    "/home/arkhan/mail/"))
               (recentf-max-saved-items . 10)
               (recentf-max-menu-items . 10)
@@ -222,39 +223,34 @@
 #+END_SRC
 ** tramp
 #+BEGIN_SRC elisp
-(leaf tramp
+(eval-after-load 'tramp '(setenv "SHELL" "/bin/bash"))
+
+(leaf exec-path-from-shell
   :straight t
   :require t
-  :pre-setq `((tramp-persistency-file-name . ,(concat conf:cache-dir "tramp"))
-              (tramp-auto-save-directory . ,(concat conf:cache-dir "tramp-autosave")))
-  :setq ((tramp-default-method . "scp")
-         (tramp-encoding-shell . "/bin/bash")
-         (tramp-debug-buffer . t)
-         (tramp-verbose . 10)
-         (tramp-shell-prompt-pattern . "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>] *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
-         (tramp-use-ssh-controlmaster-options . nil)
-         (tramp-password-prompt-regexp . '(concat
-                                           "^.*"
-                                           (regexp-opt
-                                            '("passphrase" "Passphrase"
-                                              "password" "Password"
-                                              "Verification code")
-                                            t)
-                                           ".*:\0? *")))
-  :config
-  (tramp-set-completion-function "ssh" '((tramp-parse-sconfig "/etc/ssh_config")
-                                         (tramp-parse-sconfig "~/.ssh/config"))))
+  :pre-setq (shell-file-name . "/bin/bash")
+  :config (exec-path-from-shell-initialize))
 
-(leaf counsel-tramp
-  :straight t
-  :bind ("C-c s" . counsel-tramp)
-  :after (tramp)
-  :hook ((counsel-tramp-pre-command-hook . (lambda ()
-                                             (projectile-mode 0)
-                                             (editorconfig-mode 0)))
-         (counsel-tramp-quit-hook . (lambda ()
-                                      (projectile-mode 1)
-                                      (editorconfig-mode 1)))))
+
+(leaf tramp
+  :setq `((tramp-persistency-file-name . ,(concat conf:cache-dir "tramp"))
+          (tramp-auto-save-directory . ,(concat conf:cache-dir "tramp-autosave"))
+          (tramp-default-method . "ssh")
+          (tramp-debug-buffer . t)
+          (tramp-verbose . 10)
+          (tramp-shell-prompt-pattern . "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>] *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
+          (tramp-use-ssh-controlmaster-options . nil)))
+
+    ;; (leaf counsel-tramp
+    ;;   :straight t
+    ;;   :bind ("C-c s" . counsel-tramp)
+    ;;   :after (tramp)
+    ;;   :hook ((counsel-tramp-pre-command-hook . (lambda ()
+    ;;                                              (projectile-mode 0)
+    ;;                                              (editorconfig-mode 0)))
+    ;;          (counsel-tramp-quit-hook . (lambda ()
+    ;;                                       (projectile-mode 1)
+    ;;                                       (editorconfig-mode 1)))))
 #+END_SRC
 ** load-user-files
 #+begin_src elisp
@@ -270,7 +266,7 @@
   :straight t)
 #+END_SRC
 ** avy
-#+BEGIN_SRC elisp
+#+BEGIN_SRC elisp :load no
 (leaf avy
   :straight t
   :setq (avy-all-windows . t))
@@ -379,7 +375,7 @@
 #+END_SRC
 ** font
 *** unicode-fonts
-#+begin_src elisp
+#+begin_src elisp :load no
 (leaf pcache
   :straight t
   :setq `(pcache-directory . ,(let ((dir (concat conf:cache-dir "pcache/")))
@@ -388,63 +384,67 @@
 
 (leaf unicode-fonts
   :straight t
-  :require t
-  :init
+  ;; :init
   ;; (setq unicode-fonts-block-font-mapping
   ;;     '(("Emoticons"
   ;;        ("DejaVu Sans Mono")))
   ;;     unicode-fonts-fontset-names '("fontset-default"))
-  (unicode-fonts-setup))
+  :hook (emacs-startup-hook . unicode-fonts-setup))
 #+end_src
 *** config
 #+BEGIN_SRC elisp
 (leaf emacs
-  ;; :straight nil
-  :config
-  ;; (setq conf:font-family "PragmataPro Mono Liga"
-  ;;       conf:font-name "PragmataPro Mono Liga"
-  ;;       conf:font-size 13.5
-  ;;       inhibit-compacting-font-caches t)
-  (setq conf:font-family "Cascadia Code PL"
-        conf:font-name "Cascadia Code PL"
-        conf:font-size 12
-        inhibit-compacting-font-caches t)
+    ;; :straight nil
+    :config
+    ;; (setq conf:font-family "PragmataPro Mono Liga"
+    ;;       conf:font-name "PragmataPro Mono Liga"
+    ;;       conf:font-size 13.5
+    ;;       inhibit-compacting-font-caches t)
 
-  (defun fc-list ()
-    "Genera una lista de tipografías disponibles usando fc-list"
-    (if (executable-find "fc-list")
-        (split-string (shell-command-to-string "fc-list --format='%{family[0]}\n' | sort | uniq") "\n")
-      (progn
-        (warn "fc-list no disponible en $PATH")
-        nil)))
+    (setq conf:font-family "Fantasque Sans Mono"
+          conf:font-name "Fantasque Sans Mono"
+          conf:font-size 13.5
+          inhibit-compacting-font-caches t)
 
-  (defun font-exists-p (font)
-    "Comprueba si una tipografía FONT existe.
 
-    Código parcialmente sacado de https://redd.it/1xe7vr"
-    (let ((font-list (or (font-family-list) (fc-list))))
-      (if (member font font-list)
-          t
-        nil)))
+    (set-fontset-font t 'symbol "Noto Color Emoji" nil 'append)
 
-  (defun font-pt-to-height (pt)
-    "Transforma una altura en puntos PT a altura de `face-attribute'."
-    ;; el valor es de 1/10pt, por tanto 100 seria equivalente a 10pt, etc.
-    (truncate (* pt 10)))
+    (defun fc-list ()
+      "Genera una lista de tipografías disponibles usando fc-list"
+      (if (executable-find "fc-list")
+          (split-string (shell-command-to-string "fc-list --format='%{family[0]}\n' | sort | uniq") "\n")
+        (progn
+          (warn "fc-list no disponible en $PATH")
+          nil)))
 
-  (defun font-setup (&optional frame)
-    (cond ((font-exists-p conf:font-family)
-           (set-face-attribute 'default frame :height (font-pt-to-height conf:font-size) :font conf:font-name))))
+    (defun font-exists-p (font)
+      "Comprueba si una tipografía FONT existe.
 
-  (defun font-setup-frame (frame)
-    "configura la tipografía por cada nuevo marco FRAME creado."
-    (select-frame frame)
-    (when (display-graphic-p)
-      (font-setup frame)))
+      Código parcialmente sacado de https://redd.it/1xe7vr"
+      (let ((font-list (or (font-family-list) (fc-list))))
+        (if (member font font-list)
+            t
+          nil)))
 
-  (if (daemonp)
-      (add-hook 'after-make-frame-functions #'font-setup-frame)
-    (font-setup)))
+    (defun font-pt-to-height (pt)
+      "Transforma una altura en puntos PT a altura de `face-attribute'."
+      ;; el valor es de 1/10pt, por tanto 100 seria equivalente a 10pt, etc.
+      (truncate (* pt 10)))
+
+    (defun font-setup (&optional frame)
+      (cond ((font-exists-p conf:font-family)
+             (set-face-attribute 'default frame :height (font-pt-to-height conf:font-size) :font conf:font-name))))
+
+    (defun font-setup-frame (frame)
+      "configura la tipografía por cada nuevo marco FRAME creado."
+      (select-frame frame)
+      (when (display-graphic-p)
+        (font-setup frame)))
+
+    (if (daemonp)
+        (add-hook 'after-make-frame-functions #'font-setup-frame)
+      (font-setup)))
+
 #+END_SRC
 *** pretty
 #+BEGIN_SRC elisp
@@ -524,7 +524,7 @@
 (add-hook 'after-init-hook #'global-prettify-symbols-mode)
 #+END_SRC
 ** ivy
-#+BEGIN_SRC elisp
+#+BEGIN_SRC elisp :load no
 (leaf ivy
   :straight t
   :diminish ivy-mode
@@ -655,7 +655,24 @@
 ;;   :hook (after-init-hook))
 #+end_src
 ** modeline
+*** doom-modeline
 #+BEGIN_SRC elisp
+(leaf doom-modeline
+  :straight t
+  :setq `((doom-modeline-height . 15)
+          (doom-modeline-bar-width . 7)
+          (doom-modeline-icon . nil)
+          (doom-modeline-checker-simple-format . nil)
+          (doom-modeline-modal-icon . nil)
+          (doom-modeline-mu4e . ,(fboundp 'mu4e))
+          (doom-modeline-env-version . nil)
+          (doom-modeline-window-width-limit . 'window-width)
+          (doom-modeline-project-detection . 'projectile)
+          (doom-modeline-buffer-file-name-style . 'truncate-from-project))
+  :hook (emacs-startup-hook . doom-modeline-mode))
+#+END_SRC
+*** smart-mode-line
+#+BEGIN_SRC elisp :load no
 (leaf smart-mode-line
   :straight t
   :setq ((line-number-mode . t)
@@ -693,6 +710,7 @@
   :setq ((rm-blacklist . nil)
          (rm-whitelist . "FlyC\\|Flymake\\|lsp"))
   :hook (emacs-startup-hook . rich-minority-mode))
+
 #+END_SRC
 ** move-dup
 #+BEGIN_SRC elisp
@@ -766,30 +784,18 @@
               (neotree-find file-name)))))))
 #+END_SRC
 ** selectrum
-#+BEGIN_SRC elisp :load no
-(leaf orderless
-  :straight t
-  :require t
-  :custom (completion-styles '(orderless)))
-
+#+BEGIN_SRC elisp
 (leaf selectrum
   :straight t
   :require t
-  :setq ((selectrum-refine-candidates-function . 'orderless-filter)
-         (selectrum-highlight-candidates-function . 'orderless-highlight-matches))
   :hook (emacs-startup-hook))
 
 (leaf selectrum-prescient
   :straight t
   :require t
   :after (selectrum)
-  :config
-  ;; to make sorting and filtering more intelligent
-  (selectrum-prescient-mode +1)
-
-  ;; to save your command history on disk, so the sorting gets more
-  ;; intelligent over time
-  (prescient-persist-mode +1))
+  :hook ((emacs-startup-hook . selectrum-prescient-mode)
+         (emacs-startup-hook . prescient-persist-mode)))
 
 (leaf ctrlf
   :straight t
@@ -958,7 +964,7 @@
 
   ;; Prettify icons
   (defun my-company-box-icons--elisp (candidate)
-    (when (derived-mode-p 'elisp-mode)
+    (when (derived-mode-p 'emacs-lisp-mode)
       (let ((sym (intern candidate)))
         (cond ((fboundp sym) 'Function)
               ((featurep sym) 'Module)
@@ -1069,7 +1075,7 @@
   :hook (after-init-hook . global-flycheck-mode))
 #+END_SRC
 ** flymake
-#+BEGIN_SRC elisp :load no
+#+BEGIN_SRC elisp :load no :load no
 (leaf flymake-proc
   :setq-default (flymake-diagnostic-functions . nil))
 
@@ -1115,23 +1121,21 @@
 (leaf lsp-mode
   :straight t
   :commands (lsp lsp-deferred)
-  :require t
-  :config (require 'lsp-clients)
-  :pre-setq `(lsp-session-file . ,(concat conf:cache-dir "lsp-session"))
-  :setq ((lsp-auto-guess-root . t)
-         (lsp-enable-folding . nil)
-         (lsp-enable-snippet . nil)
-         (lsp-enable-symbol-highlighting . nil)
-         (lsp-idle-delay . 0.500)
-         (lsp-inhibit-message . t)
-         (lsp-message-project-root-warning . t)
-         (lsp-prefer-capf . nil)
-         (lsp-prefer-flymake . nil)
-         (lsp-print-io . nil)
-         (lsp-print-performance . t)
-         (lsp-restart . 'auto-restart)
-         (lsp-signature-auto-activate . nil)
-         (lsp-eldoc-render-all . nil))
+  :require (lsp-mode lsp-clients)
+  :pre-setq `((lsp-session-file . ,(concat conf:cache-dir "lsp-session"))
+              (lsp-auto-guess-root . t)
+              (lsp-enable-folding . nil)
+              (lsp-enable-snippet . nil)
+              (lsp-enable-symbol-highlighting . nil)
+              (lsp-idle-delay . 0.500)
+              (lsp-inhibit-message . t)
+              (lsp-message-project-root-warning . t)
+              (lsp-prefer-capf . t)
+              (lsp-prefer-flymake . nil)
+              (lsp-print-io . nil)
+              (lsp-restart . 'interactive)
+              (lsp-signature-auto-activate . nil)
+              (lsp-eldoc-render-all . nil))
   :hook (lsp-after-open-hook . lsp-enable-imenu))
 
 ;; ref: https://gitlab.com/shackra/emacs/commit/b0df30fe744e4483a08731e6a9f6482ab408124c
@@ -1151,28 +1155,19 @@
 
 (leaf lsp-ui
   :straight t
-  :after lsp
+  :after lsp-mode
   :commands lsp-ui-mode
   :bind (lsp-ui-mode-map
          ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
          ([remap xref-find-references] . lsp-ui-peek-find-references))
-  :pre-setq  ((lsp-ui-sideline-enable . t)
-              (lsp-ui-sideline-ignore-duplicate . t)
-              (lsp-ui-sideline-show-hover . nil)
-              (lsp-ui-doc-enable . nil))
-  :hook (lsp-mode-hook . lsp-ui-mode))
-
-(leaf company-lsp
-  :straight t
-  :require t
-  :commands company-lsp
-  :setq ((company-lsp-async . t)
-         (company-lsp-cache-candidates . t)
-         (company-lsp-enable-snippet . t))
-  :init (push 'company-lsp company-backends))
+  :setq  ((lsp-ui-sideline-enable . t)
+          (lsp-ui-sideline-ignore-duplicate . t)
+          (lsp-ui-sideline-show-hover . nil)
+          (lsp-ui-doc-enable . nil))
+  :config (lsp-ui-mode))
 #+end_src
 ** makefile
-#+BEGIN_SRC elisp
+#+BEGIN_SRC elisp :load no
 (leaf makefile-runner
   :straight (makefile-runner
              :type git
@@ -1212,7 +1207,7 @@
   :hook (prog-mode-hook))
 #+END_SRC
 ** plantuml
-#+BEGIN_SRC elisp
+#+BEGIN_SRC elisp :load no
 (leaf plantuml-mode
   :straight t
   :setq (plantuml-jar-path . "/usr/share/java/plantuml/plantuml.jar"))
@@ -1221,32 +1216,43 @@
 #+BEGIN_SRC elisp
 (leaf projectile
   :straight t
-  :diminish projectile-mode
+  :bind* ("C-x b" . conf:switch-to-project-buffer-if-in-project)
   :pre-setq `((projectile-known-projects-file . ,(concat conf:cache-dir "projectile-bookmarks.eld"))
               (projectile-cache-file . ,(concat conf:cache-dir "projectile.cache"))
               (projectile-file-exists-remote-cache-expire . '(* 10 60))
               (projectile-indexing-method . 'alien)
               (projectile-enable-caching . t)
-              (projectile-completion-system . 'ivy))
-  :config (projectile-global-mode))
-
-(leaf counsel-projectile
-  :straight t
-  :bind* ("C-x b" . conf:switch-to-project-buffer-if-in-project)
-  :bind (("C-x r R" . counsel-projectile-rg)
-         ("<C-tab>" . counsel-projectile-switch-project))
+              (projectile-completion-system . 'default))
   :config
   (defun conf:switch-to-project-buffer-if-in-project (arg)
     "Custom switch to buffer.
        With universal argument ARG or when not in project, rely on
-       `ivy-switch-buffer'.
-       Otherwise, use `counsel-projectile-switch-to-buffer'."
+       `switch-to-buffer'.
+       Otherwise, use `projectile-switch-to-buffer'."
     (interactive "P")
     (if (or arg
             (not (projectile-project-p)))
-        (ivy-switch-buffer)
-      (counsel-projectile-switch-to-buffer)))
-  :hook ((text-mode-hook prog-mode-hook) . counsel-projectile-mode))
+        (let ((completion-regexp-list '("\\`[^*]"
+                                        "\\`\\([^T]\\|T\\($\\|[^A]\\|A\\($\\|[^G]\\|G\\($\\|[^S]\\|S.\\)\\)\\)\\).*")))
+          (call-interactively 'switch-to-buffer))
+      (projectile-switch-to-buffer)))
+
+  (projectile-global-mode))
+
+(leaf deadgrep
+  :straight t
+  :commands (deadgrep--read-search-term)
+  :bind (("C-x C-r" . deadgrep)
+         ("C-x r R" . projectile-deadgrep))
+  :config
+  (defun projectile-selection-at-point ()
+    (when (use-region-p)
+      (buffer-substring-no-properties (region-beginning) (region-end))))
+
+  (defun projectile-deadgrep (search-term)
+    (interactive (list (deadgrep--read-search-term)))
+    (let ((deadgrep-project-root-function #'projectile-project-root))
+      (deadgrep search-term))))
 #+END_SRC
 ** polymode
 #+BEGIN_SRC elisp
@@ -1306,43 +1312,33 @@
 (add-hook 'python-mode-hook '(lambda ()
                                (when (empty-buffer?) (python-template))))
 
-(leaf python-mode
-  :straight t
-  :pre-setq ((lsp-pyls-plugins-pycodestyle-enabled . nil)
-             (lsp-pyls-plugins-pyflakes-enabled . nil)
-             (lsp-pyls-plugins-flake8-enabled . t))
+(leaf python
+  :require (smartparens-python electric)
+  :setq ((python-indent . 4)
+         (python-indent-offset . 4)
+         (py-switch-buffers-on-execute-p . t)
+         (py-split-window-on-execute . nil)
+         (lsp-pyls-plugins-pycodestyle-enabled . nil)
+         (lsp-pyls-plugins-pyflakes-enabled . nil)
+         (lsp-pyls-plugins-flake8-enabled . t))
   :config
-  (require 'smartparens-python)
-  (require 'electric)
   (projectile-register-project-type 'python '("pyproject.toml")
                                     :compile ""
                                     :test "")
   :hook (python-mode-hook . lsp))
 #+END_SRC
-*** pyenv + virtualenv
+*** pyenv
 #+BEGIN_SRC elisp
 (leaf auto-virtualenvwrapper
   :straight t
   :require t
+  :after python
   :config
-  (defun in-venv ()
-    (if (or (equal major-mode 'python-mode) (equal major-mode 'projectile-mode))
-        (not (string-match "^\n" (shell-command-to-string "sh -c 'pyenv version-name'")))))
-
-  (defun venv-name ()
-    (interactive)
-    (let* ((venv (s-trim
-                  (shell-command-to-string
-                   "sh -c 'pyenv version-name'"))))
-      (concat
-       (propertize
-        (format "%s" venv)
-        'face (list :foreground "SlateGray4")))))
-
   (add-to-list 'mode-line-misc-info
-               '(:eval (if (in-venv)
-                           (concat "[" (venv-name) "]"))))
-
+               '(:eval (when (boundp 'venv-current-name)
+                         (if venv-current-name
+                             (format "Pyenv:%s" venv-current-name)
+                           nil))))
   :hook ((python-mode-hook projectile-after-switch-project-hook) . auto-virtualenvwrapper-activate))
 #+END_SRC
 *** pep8
@@ -1709,8 +1705,6 @@
 #+end_src
 ** docker
 #+begin_src elisp
-(leaf docker :straight t)
-
 (leaf dockerfile-mode
   :straight t
   :mode "Dockerfile\\'")
@@ -1731,6 +1725,26 @@
   :setq (dumb-jump-selector 'completing-read))
 #+END_SRC
 ** email
+*** misc
+#+BEGIN_SRC elisp
+  (leaf visual-fill-column
+    :straight t)
+
+  (defun extract-email (str)
+    ;; return last sub-string looking like an email address
+    (let ((tokens (reverse (split-string-and-unquote str)))
+          (match))
+      (dolist (token tokens)
+        (string-match "<?\\([^ ]+@[^ ]+\.[^ >]+\\)>?" token)
+        (setq match (or match (match-string 1 token))))
+      match))
+
+  (defun visual-clean ()
+    "Clean up messy buffers (i.e. web wikis or elfeed-show)"
+    (interactive)
+    (visual-line-mode)
+    (visual-fill-column-mode))
+#+END_SRC
 *** message
 #+begin_src elisp
 (leaf message
@@ -1742,15 +1756,6 @@
          (message-send-mail-function . 'message-send-mail-with-sendmail)
          (sendmail-program . "msmtp"))
   :config
-  (defun extract-email (str)
-    ;; return last sub-string looking like an email address
-    (let ((tokens (reverse (split-string-and-unquote str)))
-          (match))
-      (dolist (token tokens)
-        (string-match "<?\\([^ ]+@[^ ]+\.[^ >]+\\)>?" token)
-        (setq match (or match (match-string 1 token))))
-      match))
-
   (defun choose-msmtp-account ()
     (if (message-mail-p)
         (save-excursion
@@ -1780,11 +1785,6 @@
       (window-configuration-to-register :mu4e-fullscreen)
       (delete-other-windows)))
 
-  (defadvice mu4e-quit (after mu4e-close-and-push activate)
-    "Despues de salir de mu4e ejecutamos un script para subir los cambios al buzon de correo y para también restaurar la disposición de ventanas"
-    (start-process "pushmail" "*pushmail-offlineimap*" "offlineimap")
-    (when (get-register :mu4e-fullscreen)
-      (jump-to-register :mu4e-fullscreen)))
   :pre-setq ((mail-user-agent . 'mu4e-user-agent)
              (mu4e-attachment-dir .  "~/Descargas")
              (mu4e-auto-retrieve-keys . t)
@@ -1798,7 +1798,7 @@
              (mu4e-headers-auto-update . t)
              (mu4e-headers-leave-behavior . 'ignore)
              (mu4e-headers-from-or-to-prefix . '("" . "➜ "))
-             (mu4e-headers-visible-lines . 8)
+             (mu4e-headers-visible-lines . 4)
              (mu4e-headers-fields . '((:human-date    .   10)
                                       (:from          .   30)
                                       (:to            .   30)
@@ -1817,7 +1817,10 @@
                                    :tags
                                    :attachments
                                    :signature))
-             (mu4e-html2text-command . "w3m -dump -T text/html -cols 72 -o display_link_number=true -o auto_image=false -o display_image=true -o ignore_null_img_alt=true")
+             (mu4e-html2text-command . "w3m -dump -T text/html -cols 72 -o display_link_number=true -o display_image=true")
+             (mu4e-view-html-plaintext-ratio-heuristic . most-positive-fixnum)
+             (mu4e-compose-format-flowed . t)
+             (mu4e-org-contacts-file . "~/org/contacts.org")
              (mu4e-maildir . "~/.mail")
              (mu4e-view-show-images . t)
              (mu4e-view-show-addresses . t)
@@ -1826,9 +1829,14 @@
              (mu4e-get-mail-command . "offlineimap")
              (mu4e-update-interval . 300))
   :config
+  (add-to-list 'mu4e-headers-actions
+               '("org-contact-add" . mu4e-action-add-org-contact) t)
+  (add-to-list 'mu4e-view-actions
+               '("org-contact-add" . mu4e-action-add-org-contact) t)
+
   (defun conf:mu4e~headers-jump-to-maildir()
     (interactive)
-    (let ((maildir (ivy-read "Maildir: " (mu4e-get-maildirs))))
+    (let ((maildir (completing-read "Maildir: " (mu4e-get-maildirs))))
       (mu4e-headers-search (format "maildir:\"%s\"" maildir))))
 
   (when (fboundp 'imagemagick-register-types)
@@ -1837,7 +1845,8 @@
   (run-at-time nil (* 60 5) '(lambda ()
                                (interactive)
                                (mu4e-update-mail-and-index t)))
-  :hook (mu4e-compose-mode-hook . flyspell-mode))
+  :hook ((mu4e-compose-mode-hook . visual-clean)
+         (mu4e-compose-mode-hook . flyspell-mode)))
 
 (leaf mu4e-alert
   :if (executable-find "mu")
@@ -1861,8 +1870,7 @@
   :if (executable-find "mu")
   :straight t
   :after mu4e
-  :setq ((shell-file-name . "/bin/sh")
-         (mu4e-maildirs-extension-hide-empty-maildirs . t)
+  :setq ((mu4e-maildirs-extension-hide-empty-maildirs . t)
          (mu4e-maildirs-extension-action-text . nil)
          (mu4e-maildirs-extension-title . nil)
          (mu4e-maildirs-extension-maildir-collapsed-prefix . "*")
@@ -1874,15 +1882,16 @@
 (leaf htmlize
   :straight t)
 
-(leaf org-msg
-  :load-path "/media/data/dev/arkhan/Code/org-msg"
-  :require t
-  :config
-  (load-user-file "org-msg")
-  (org-msg-mode))
+;; (leaf org-msg
+;;   :load-path "/media/data/dev/arkhan/Code/org-msg"
+;;   :require t
+;;   :config
+;;   (load-user-file "org-msg")
+;;   (org-msg-mode))
 
 (leaf notmuch
   :if (executable-find "notmuch")
+  :straight t
   :bind (("<f1>" . notmuch)
          (notmuch-search-mode-map
           ;; bind 'r' to reply-all, and 'R' to reply
@@ -1890,13 +1899,13 @@
           ("R" . notmuch-search-reply-to-thread-sender)
           ("K" . conf:notmuch-mark-read-and-delete)))
   :setq ((mail-user-agent . 'notmuch-user-agent)
-         (mm-text-html-renderer . 'w3m-standalone)
-         (notmuch-multipart/alternative-discouraged . nil)
+         ;;(mm-text-html-renderer . 'w3m-standalone)
+         ;(notmuch-multipart/alternative-discouraged . nil)
          (notmuch-show-logo . nil)
-         (notmuch-always-prompt-for-sender . t)
+         ;;(notmuch-always-prompt-for-sender . t)
          (notmuch-archive-tags . '("-inbox" "-unread"))
          (notmuch-crypto-process-mime . t)
-         (notmuch-labeler-hide-known-labels . nil)
+         ;;(notmuch-labeler-hide-known-labels . nil)
          (notmuch-search-oldest-first . nil)
          (notmuch-draft-save-plaintext . t))
   :config
@@ -1912,7 +1921,7 @@
       (with-current-buffer buf
         (erase-buffer))
       (set-process-sentinel
-       (start-process-shell-command "notmuch update" buf "offlineimap -u basic && notmuch new && afew -a -t && notifymuch")
+       (start-process-shell-command "notmuch update" buf "offlineimap -u basic && notmuch new && afew -a -t")
        ;; refresh notmuch buffers if sync was successful
        (lambda (_process event)
          (if (string= event "finished\n")
@@ -1951,54 +1960,75 @@
 
 (leaf org-notmuch
   :require t
-    :after (:any org notmuch))
+  :after (:any org notmuch))
 
-  (leaf notmuch-unread
-    :load-path "/home/arkhan/notmuch-unread/"
-    ;; :straight (notmuch-unread
-    ;;            :type git
-    ;;            :host github
-    ;;            :repo "liampwll/notmuch-unread")
-    :require t
-    :config (notmuch-unread-mode t))
+(leaf notmuch-unread
+  :straight (notmuch-unread
+             :type git
+             :host github
+             :repo "arkhan/notmuch-unread")
+  :require t
+  :config (notmuch-unread-mode t))
 
-  (leaf profile
-    :straight (profile
-               :type git
-               :host github
-               :repo "DamienCassou/profile")
-    :bind ("C-c F" . profile-force-profile-in-compose)
-    :after notmuch
-    :init
-    (load-user-file "profile")
+(leaf profile
+  :straight (profile
+             :type git
+             :host github
+             :repo "DamienCassou/profile")
+  :bind ("C-c F" . profile-force-profile-in-compose)
+  :after notmuch
+  :init
+  (load-user-file "profile")
 
-    (defun my:notmuch-build-identity (&optional email)
-      "Return a string of the form \"name <EMAIL>\"."
-      (let ((email (or email user-mail-address)))
-        (format "%s <%s>" (notmuch-user-name) email)))
+  (defun my:notmuch-build-identity (&optional email)
+    "Return a string of the form \"name <EMAIL>\"."
+    (let ((email (or email user-mail-address)))
+      (format "%s <%s>" (notmuch-user-name) email)))
 
-    (setq notmuch-identities
-          (mapcar #'my:notmuch-build-identity
-                  (profile-email-addresses)))
+  (setq notmuch-identities
+        (mapcar #'my:notmuch-build-identity
+                (profile-email-addresses)))
 
-    (defun my:notmuch-prompt-for-sender ()
-      "Prompt for a sender using `profile-binding-alist'."
-      (profile-set-profile)
-      (my:notmuch-build-identity))
+  (defun my:notmuch-prompt-for-sender ()
+    "Prompt for a sender using `profile-binding-alist'."
+    ;; (profile-set-profile)
+    (save-excursion
+      (let*
+          ((from (save-restriction
+                   (message-narrow-to-headers)
+                   (message-fetch-field "from")))
+           (account (extract-email from)))
+        (profile-set-profile-from-name account))
+      (my:notmuch-build-identity)))
 
-    (advice-add #'notmuch-mua-prompt-for-sender
-                :override
-                #'my:notmuch-prompt-for-sender)
+  (advice-add #'notmuch-mua-prompt-for-sender
+              :override
+              #'my:notmuch-prompt-for-sender)
 
-    ;; https://notmuchmail.org/pipermail/notmuch/2017/025320.html
-    (defun my:notmuch-mua-new-reply (arguments)
-      "Always set PROMPT-FOR-SENDER to t when using `notmuch-mua-new-reply'."
-      (list (cl-first arguments) t (cl-third arguments)))
+  ;; https://notmuchmail.org/pipermail/notmuch/2017/025320.html
+  (defun my:notmuch-mua-new-reply (arguments)
+    "Always set PROMPT-FOR-SENDER to t when using `notmuch-mua-new-reply'."
+    (list (cl-first arguments) t (cl-third arguments)))
 
-    (advice-add #'notmuch-mua-new-reply :filter-args #'my:notmuch-mua-new-reply)
-    (add-to-list 'notmuch-hello-sections #'profile-queue-insert-section t))
-#+end_#+BEGIN_SRC
+  (advice-add #'notmuch-mua-new-reply :filter-args #'my:notmuch-mua-new-reply)
+  (add-to-list 'notmuch-hello-sections #'profile-queue-insert-section t))
 
+;; First, install notmuch-bookmarks:
+(leaf notmuch-bookmarks
+  :straight t
+  :after notmuch
+  :config (notmuch-bookmarks-mode))
+
+;; Second, install the alert package:
+(leaf notmuch-alert
+  :straight (notmuch-alert
+             :type git
+             :host github
+             :repo "publicimageltd/notmuch-alerts")
+  :after notmuch-bookmarks
+  :require t
+  :bind* ("<f3>" . notmuch-alert-visit)
+  :config (notmuch-alert-mode))
 #+END_SRC
 *** org-msg
 #+BEGIN_SRC elisp
@@ -2049,7 +2079,7 @@
 #+END_SRC
 ** spelling
 *** spell-fu
-#+BEGIN_SRC elisp :load no
+#+BEGIN_SRC elisp :load no :load no :load no :load no :load no
 (leaf spell-fu
   :straight t
   :hook (after-init-hook . global-spell-fu-mode))
@@ -2215,7 +2245,7 @@
     (define-key magit-mode-map "c" 'magit-maybe-commit)
 
     (setq magit-git-executable "git"
-          magit-completing-read-function 'ivy-completing-read
+          magit-completing-read-function 'completing-read
           magit-default-tracking-name-function 'magit-default-tracking-name-branch-only
           magit-status-buffer-switch-function 'switch-to-buffer
           magit-diff-refine-hunk t
@@ -2226,6 +2256,11 @@
           magit-set-upstream-on-push 'askifnotset
           magit-refs-show-commit-count 'all
           magit-log-buffer-file-locket t)))
+
+(leaf magit-todos
+  :straight t
+  :require t
+  :hook (magit-mode-hook))
 
 (leaf magit-gitflow
   :straight t
@@ -2290,7 +2325,7 @@
          ("b" . git-timemachine-switch-branch)))
 #+END_SRC
 ** mingus
-#+begin_src elisp
+#+begin_src elisp :load no
 (leaf mingus
   :straight t
   :bind ("M-3" . mingus)
@@ -2423,7 +2458,7 @@
   :straight t
   :require t
   :setq ((org-superstar-leading-bullet . "  ")
-         (org-superstar-headline-bullets-list . '("◉")))
+         (org-superstar-headline-bullets-list . '("●")))
   :hook (org-mode-hook . (lambda () (org-superstar-mode 1))))
 
 (leaf org-agenda
@@ -2529,7 +2564,10 @@
 (leaf org-vcard
   :straight t
   :require t
-  :setq (org-vcard-default-style . "tree"))
+  :setq ((org-vcard-default-style . "tree")
+         (org-vcard-append-to-existing-import-buffer . nil)
+         (org-vcard-default-export-file . "~/.contacts/contacts.vcf")
+         (org-vcard-default-import-file . "")))
 
 (leaf secretaria
   :straight t
@@ -2578,7 +2616,7 @@
   :straight t)
  #+END_SRC
 ** org-tree-slide
-#+BEGIN_SRC elisp
+#+BEGIN_SRC elisp :load no
 ;; https://github.com/kaushalmodi/.emacs.d/blob/master/setup-files/setup-org.el#L1581
 (leaf org-tree-slide
   :straight t
@@ -2743,7 +2781,7 @@
         (pdf-view-display-size . 'fit-page)
         (pdf-view-use-imagemagick . t)
         (pdf-view-midnight-colors . '("white smoke" . "gray5")))
-    :config (pdf-loader-install t t))
+  :init (pdf-tools-install t t))
 
 (leaf org-pdftools
   :straight t
@@ -2855,10 +2893,6 @@
   :pre-setq ((proced-tree-flag . t)
              (proced-auto-update-flag . t)))
 #+END_SRC
-** restart-emacs
-#+BEGIN_SRC elisp
-(leaf restart-emacs  :straight t)
-#+END_SRC
 ** shell
 #+BEGIN_SRC elisp
 (leaf terminal-here
@@ -2869,11 +2903,12 @@
 #+END_SRC
 ** ssh
 #+BEGIN_SRC elisp
-;; (leaf ssh
-;;   :hook (ssh-mode-hook . (lambda ()
-;;                            (setq ssh-directory-tracking-mode t)
-;;                            (shell-dirtrack-mode t)
-;;                            (setq dirtrackp nil))))
+(leaf ssh
+  :hook (ssh-mode-hook . (lambda ()
+                           (setq ssh-directory-tracking-mode t)
+                           (shell-dirtrack-mode t)
+                           (setq dirtrackp nil))))
+
 (leaf ssh-config-mode
   :straight t
   :mode (("/\\.ssh/config\\'" . ssh-config-mode)
@@ -2884,8 +2919,12 @@
 #+END_SRC
 ** sudo
 #+BEGIN_SRC elisp
-(leaf sudo-edit
-  :straight t)
+(leaf su
+  :straight (su
+             :type git
+             :host github
+             :repo "PythonNut/su.el")
+  :hook (emacs-startup-hook))
 #+END_SRC
 ** undo
 #+begin_src elisp
@@ -2900,7 +2939,7 @@
 #+BEGIN_SRC elisp
 (leaf vlf-setup
   :straight vlf
-  :init (setq vlf-application 'dont-ask))
+  :setq (vlf-application . 'dont-ask))
 #+END_SRC
 ** vpn
 #+BEGIN_SRC elisp
@@ -2915,15 +2954,6 @@
   :diminish which-key-mode
   :setq (which-key-sort-order . 'which-key-key-order-alpha)
   :hook (emacs-startup-hook . which-key-mode))
-#+END_SRC
-** xonsh
-#+BEGIN_SRC elisp
-(leaf xonsh-mode
-  :straight (xonsh-mode
-             :type git
-             :host github
-             :repo "seanfarley/xonsh-mode")
-  :require t)
 #+END_SRC
 ** xrdb
 #+BEGIN_SRC elisp
