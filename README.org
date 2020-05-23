@@ -117,12 +117,12 @@
 	  auto-save-list-file-prefix nil
 	  make-backup-files nil
 	  create-lockfiles nil
-	  frame-resize-pixelwise t
 	  ring-bell-function 'ignore
 	  major-mode 'text-mode)
                                         ;current-language-environment "Spanish")
 
 (setq-default indent-tabs-mode nil
+              frame-resize-pixelwise t
 			  tab-width 4
 			  frame-title-format (list (user-login-name) "@" (system-name) " %b [%m]"))
 
@@ -235,22 +235,12 @@
 (leaf tramp
   :setq `((tramp-persistency-file-name . ,(concat conf:cache-dir "tramp"))
           (tramp-auto-save-directory . ,(concat conf:cache-dir "tramp-autosave"))
-          (tramp-default-method . "ssh")
+          (tramp-default-method . "scp")
           (tramp-debug-buffer . t)
           (tramp-verbose . 10)
-          (tramp-shell-prompt-pattern . "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>] *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")
-          (tramp-use-ssh-controlmaster-options . nil)))
-
-    ;; (leaf counsel-tramp
-    ;;   :straight t
-    ;;   :bind ("C-c s" . counsel-tramp)
-    ;;   :after (tramp)
-    ;;   :hook ((counsel-tramp-pre-command-hook . (lambda ()
-    ;;                                              (projectile-mode 0)
-    ;;                                              (editorconfig-mode 0)))
-    ;;          (counsel-tramp-quit-hook . (lambda ()
-    ;;                                       (projectile-mode 1)
-    ;;                                       (editorconfig-mode 1)))))
+          (tramp-chunksize . 2000)
+          (tramp-shell-prompt-pattern . "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>] *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*")))
+          ;;(tramp-use-ssh-controlmaster-options . nil)))
 #+END_SRC
 ** load-user-files
 #+begin_src elisp
@@ -368,8 +358,7 @@
               (dashboard-set-file-icons . t)
               (dashboard-items . '((recents  . 10)
                                    (bookmarks . 5)
-                                   (projects . 5)
-                                   (agenda . 5)))
+                                   (projects . 5)))
               (initial-buffer-choice . '(lambda () (switch-to-buffer "*dashboard*"))))
   :config (dashboard-setup-startup-hook))
 #+END_SRC
@@ -406,8 +395,6 @@
           conf:font-size 13.5
           inhibit-compacting-font-caches t)
 
-
-    (set-fontset-font t 'symbol "Noto Color Emoji" nil 'append)
 
     (defun fc-list ()
       "Genera una lista de tipografías disponibles usando fc-list"
@@ -524,7 +511,7 @@
 (add-hook 'after-init-hook #'global-prettify-symbols-mode)
 #+END_SRC
 ** ivy
-#+BEGIN_SRC elisp :load no
+#+BEGIN_SRC elisp
 (leaf ivy
   :straight t
   :diminish ivy-mode
@@ -659,16 +646,15 @@
 #+BEGIN_SRC elisp
 (leaf doom-modeline
   :straight t
-  :setq `((doom-modeline-height . 15)
-          (doom-modeline-bar-width . 7)
-          (doom-modeline-icon . nil)
-          (doom-modeline-checker-simple-format . nil)
-          (doom-modeline-modal-icon . nil)
-          (doom-modeline-mu4e . ,(fboundp 'mu4e))
-          (doom-modeline-env-version . nil)
-          (doom-modeline-window-width-limit . 'window-width)
-          (doom-modeline-project-detection . 'projectile)
-          (doom-modeline-buffer-file-name-style . 'truncate-from-project))
+  :setq ((doom-modeline-height . 15)
+         (doom-modeline-bar-width . 7)
+         (doom-modeline-icon . nil)
+         (doom-modeline-checker-simple-format . nil)
+         (doom-modeline-modal-icon . nil)
+         (doom-modeline-mu4e . t)
+         (doom-modeline-window-width-limit . 'window-width)
+         (doom-modeline-project-detection . 'projectile)
+         (doom-modeline-buffer-file-name-style . 'truncate-from-project))
   :hook (emacs-startup-hook . doom-modeline-mode))
 #+END_SRC
 *** smart-mode-line
@@ -723,6 +709,34 @@
          ("C-M-<up>" . md-duplicate-up)
          ("C-M-<down>" . md-duplicate-down))
   :config (global-move-dup-mode))
+#+END_SRC
+** dired
+#+BEGIN_SRC elisp :load no
+(leaf dired-toggle
+  :straight t
+  :require dired
+  :leaf-defer nil
+  :bind (("M-1" . dired-toggle)
+         (dired-mode-map
+          ("q" . dired-toggle-quit)
+          ([remap dired-find-file] . dired-toggle-find-file)
+          ([remap dired-up-directory] . dired-toggle-up-directory)
+          ("C-c C-u" . dired-toggle-up-directory)))
+  :setq ((dired-toggle-window-size . 32)
+         (dired-toggle-window-side . 'left))
+  :hook (dired-toggle-mode-hook . (lambda () (interactive)
+                                    (visual-line-mode 1)
+                                    (setq-local visual-line-fringe-indicators '(nil right-curly-arrow))
+                                    (setq-local word-wrap nil))))
+
+(leaf dired-subtree
+  :straight t
+  :after dired
+  :setq (dired-subtree-use-backgrounds . nil)
+  :bind (dired-mode-map
+         ("<tab>" . dired-subtree-toggle)
+         ("<C-tab>" . dired-subtree-cycle)
+         ("<S-iso-lefttab>" . dired-subtree-remove)))
 #+END_SRC
 ** neotree
 #+BEGIN_SRC elisp
@@ -784,7 +798,7 @@
               (neotree-find file-name)))))))
 #+END_SRC
 ** selectrum
-#+BEGIN_SRC elisp
+#+BEGIN_SRC elisp :load no
 (leaf selectrum
   :straight t
   :require t
@@ -1239,20 +1253,38 @@
 
   (projectile-global-mode))
 
-(leaf deadgrep
-  :straight t
-  :commands (deadgrep--read-search-term)
-  :bind (("C-x C-r" . deadgrep)
-         ("C-x r R" . projectile-deadgrep))
-  :config
-  (defun projectile-selection-at-point ()
-    (when (use-region-p)
-      (buffer-substring-no-properties (region-beginning) (region-end))))
+;; (leaf deadgrep
+;;   :straight t
+;;   :commands (deadgrep--read-search-term)
+;;   :bind (("C-x C-r" . deadgrep)
+;;          ("C-x r R" . projectile-deadgrep))
+;;   :config
+;;   (defun projectile-selection-at-point ()
+;;     (when (use-region-p)
+;;       (buffer-substring-no-properties (region-beginning) (region-end))))
 
-  (defun projectile-deadgrep (search-term)
-    (interactive (list (deadgrep--read-search-term)))
-    (let ((deadgrep-project-root-function #'projectile-project-root))
-      (deadgrep search-term))))
+;;   (defun projectile-deadgrep (search-term)
+;;     (interactive (list (deadgrep--read-search-term)))
+;;     (let ((deadgrep-project-root-function #'projectile-project-root))
+;;       (deadgrep search-term))))
+
+
+(leaf counsel-projectile
+  :straight t
+  :bind (("C-x r R" . counsel-projectile-rg)
+         ("<C-tab>" . counsel-projectile-switch-project))
+  :config
+  (defun conf:switch-to-project-buffer-if-in-project (arg)
+    "Custom switch to buffer.
+       With universal argument ARG or when not in project, rely on
+       `ivy-switch-buffer'.
+       Otherwise, use `counsel-projectile-switch-to-buffer'."
+    (interactive "P")
+    (if (or arg
+            (not (projectile-project-p)))
+        (ivy-switch-buffer)
+      (counsel-projectile-switch-to-buffer)))
+  :hook ((text-mode-hook prog-mode-hook) . counsel-projectile-mode))
 #+END_SRC
 ** polymode
 #+BEGIN_SRC elisp
@@ -1329,17 +1361,21 @@
 #+END_SRC
 *** pyenv
 #+BEGIN_SRC elisp
-(leaf auto-virtualenvwrapper
+;; (leaf auto-virtualenvwrapper
+;;   :straight t
+;;   :require t
+;;   :after python
+;;   :config
+;;   (add-to-list 'mode-line-misc-info
+;;                '(:eval (when (boundp 'venv-current-name)
+;;                          (if venv-current-name
+;;                              (format "Pyenv:%s" venv-current-name)
+;;                            nil))))
+;;   :hook ((python-mode-hook projectile-after-switch-project-hook) . auto-virtualenvwrapper-activate))
+(leaf direnv
   :straight t
   :require t
-  :after python
-  :config
-  (add-to-list 'mode-line-misc-info
-               '(:eval (when (boundp 'venv-current-name)
-                         (if venv-current-name
-                             (format "Pyenv:%s" venv-current-name)
-                           nil))))
-  :hook ((python-mode-hook projectile-after-switch-project-hook) . auto-virtualenvwrapper-activate))
+  :hook (after-init-hook . direnv-mode))
 #+END_SRC
 *** pep8
 #+BEGIN_SRC elisp
@@ -1390,7 +1426,7 @@
 #+begin_src elisp
 (leaf verb
   :straight t
-  :require t
+  :require (verb ob-verb)
   :mode ("\\.verb\\'" . verb-mode))
 #+end_src
 ** sql
@@ -1592,6 +1628,17 @@
              :repo "hlissner/doom-snippets"
              :files ("*.el" "*"))
   :after yasnippet)
+#+END_SRC
+** guix
+#+BEGIN_SRC elisp
+(leaf geiser
+  :straight t
+  :require t
+  :config
+  (with-eval-after-load 'geiser-guile
+    (add-to-list 'geiser-guile-load-path "~/guix"))
+  (with-eval-after-load 'yasnippet
+    (add-to-list 'yas-snippet-dirs "~/guix/etc/snippets")))
 #+END_SRC
 * Tools
 ** alert
@@ -1798,7 +1845,7 @@
              (mu4e-headers-auto-update . t)
              (mu4e-headers-leave-behavior . 'ignore)
              (mu4e-headers-from-or-to-prefix . '("" . "➜ "))
-             (mu4e-headers-visible-lines . 4)
+             (mu4e-headers-visible-lines . 8)
              (mu4e-headers-fields . '((:human-date    .   10)
                                       (:from          .   30)
                                       (:to            .   30)
@@ -1882,13 +1929,6 @@
 (leaf htmlize
   :straight t)
 
-;; (leaf org-msg
-;;   :load-path "/media/data/dev/arkhan/Code/org-msg"
-;;   :require t
-;;   :config
-;;   (load-user-file "org-msg")
-;;   (org-msg-mode))
-
 (leaf notmuch
   :if (executable-find "notmuch")
   :straight t
@@ -1899,8 +1939,9 @@
           ("R" . notmuch-search-reply-to-thread-sender)
           ("K" . conf:notmuch-mark-read-and-delete)))
   :setq ((mail-user-agent . 'notmuch-user-agent)
-         ;;(mm-text-html-renderer . 'w3m-standalone)
-         ;(notmuch-multipart/alternative-discouraged . nil)
+         (mm-text-html-renderer . 'w3m-standalone)
+         ;;(notmuch-multipart/alternative-discouraged . ("text/html" "text"))
+         (notmuch-multipart/alternative-discouraged . '("text/plain" "text/html"))
          (notmuch-show-logo . nil)
          ;;(notmuch-always-prompt-for-sender . t)
          (notmuch-archive-tags . '("-inbox" "-unread"))
@@ -1961,6 +2002,17 @@
 (leaf org-notmuch
   :require t
   :after (:any org notmuch))
+
+(leaf org-msg
+  :straight (org-msg
+             :type git
+             :host github
+             :repo "obar/org-msg")
+  :require t
+  :after notmuch
+  :config
+  (load-user-file "org-msg")
+  (org-msg-mode))
 
 (leaf notmuch-unread
   :straight (notmuch-unread
@@ -2079,9 +2131,10 @@
 #+END_SRC
 ** spelling
 *** spell-fu
-#+BEGIN_SRC elisp :load no :load no :load no :load no :load no
+#+BEGIN_SRC elisp :load no
 (leaf spell-fu
   :straight t
+  :require t
   :hook (after-init-hook . global-spell-fu-mode))
 
 (setq-default ispell-program-name "hunspell"
@@ -2344,7 +2397,6 @@
 #+BEGIN_SRC elisp
 (leaf org
   :straight org-plus-contrib
-  :diminish org-indent-mode
   :setq `((org-modules . '(ol-bbdb
                            ol-bibtex ol-docview ol-info
                            org-crypt org-protocol org-id
@@ -2354,13 +2406,13 @@
           (org-id-locations-file . ,(concat conf:cache-dir "org-id.el"))
           (org-directory . "~/org")
           (org-default-notes-file . ,(concat org-directory "/notes.org"))
-          )
+          (org-startup-indented . t))
   :config
   (progn
     (add-hook 'org-mode-hook
               (lambda ()
                 (turn-on-auto-fill)
-                (org-indent-mode)
+                ;; (org-indent-mode)
                 (switch-dictionary)))
 
     ;; ;; set default directories
@@ -2490,26 +2542,26 @@
   :commands (doct)
   :config
   (setq org-capture-templates
-      (doct '(("Work" :keys "w"
-               :file "~/org/work.org"
-               :prepend t
-               :template ("* %{todo-state} %^{Description}"
-                          "SCHEDULED: %(org-insert-time-stamp (org-read-date nil t \"+0d\"))"
-                          ":PROPERTIES:"
-                          ":CREATED: %U"
-                          ":CATEGORY: %{headline}"
-                          ":END:"
-                          "%?")
-               :children (("Task"
-                           :keys "t"
-                           :headline "Task"
-                           :todo-state "TODO")
-                          ("COMMENT Overtime" :keys "o"
-                           :headline   "Two"
-                           :todo-state "NEXT")
-                          ("Third Child"  :keys "3"
-                           :headline   "Three"
-                           :todo-state "MAYBE")))))))
+        (doct '(("Work" :keys "w"
+                 :file "~/org/work.org"
+                 :prepend t
+                 :template ("* %{todo-state} %^{Description}"
+                            "SCHEDULED: %(org-insert-time-stamp (org-read-date nil t \"+0d\"))"
+                            ":PROPERTIES:"
+                            ":CREATED: %U"
+                            ":CATEGORY: %{headline}"
+                            ":END:"
+                            "%?")
+                 :children (("Task"
+                             :keys "t"
+                             :headline "Task"
+                             :todo-state "TODO")
+                            ("COMMENT Overtime" :keys "o"
+                             :headline   "Two"
+                             :todo-state "NEXT")
+                            ("Third Child"  :keys "3"
+                             :headline   "Three"
+                             :todo-state "MAYBE")))))))
 
 (leaf org-super-agenda
   :straight t
@@ -2806,12 +2858,13 @@
   :after (org-noter))
 #+END_SRC
 ** pkgbuil
-#+BEGIN_SRC elisp :load no
+#+BEGIN_SRC elisp
 (leaf pkgbuild-mode
+  :straight t
   :mode "PKGBUILD\\'")
 #+END_SRC
 ** ebuild
-#+begin_src elisp
+#+begin_src elisp :load no
 (leaf ebuild-mode
   :straight t)
 #+end_src
